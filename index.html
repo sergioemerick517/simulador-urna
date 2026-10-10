@@ -70,12 +70,10 @@
         .processing-screen { display:flex; flex-direction:column; justify-content:center; gap:14px; height:100%; color:#172016; }
         .processing-title { font-size:18px; font-weight:800; text-align:center; letter-spacing:.5px; }
         .processing-subtitle { font-size:11px; text-align:center; }
-        .progress-list { display:flex; flex-direction:column; gap:9px; margin:5px 0; }
-        .progress-row { display:grid; grid-template-columns:64px 1fr; align-items:center; gap:8px; font-size:10px; font-weight:700; }
-        .progress-track { height:12px; border:1px solid #52634d; border-radius:2px; background:#e0e6d8; overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.18); }
-        .progress-fill { height:100%; width:100%; background:linear-gradient(90deg,#15803d,#22c55e,#4ade80); transform:scaleX(0); transform-origin:left center; animation:vote-load var(--load-duration) linear forwards; }
+        .progress-track { height:12px; border:1px solid #52634d; border-radius:8px; background:#e0e6d8; overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.18); }
+        .progress-fill { height:100%; width:100%; border-radius:8px; background:linear-gradient(90deg,#15803d,#22c55e,#4ade80); transform:scaleX(0); transform-origin:left center; animation:vote-load var(--load-duration, 2.6s) linear forwards; }
         @keyframes vote-load { to { transform:scaleX(1); } }
-        @media (prefers-reduced-motion: reduce) { .progress-fill { animation-duration:1.2s !important; } }
+        @media (prefers-reduced-motion: reduce) { .progress-fill { animation:none; transform:scaleX(1); } }
         .fim-screen small { font-size: 14px; letter-spacing: 0; font-weight: 600; }
         .start-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; height:100%; }
         .start-screen h2 { font-size:24px; }
@@ -126,9 +124,6 @@
         .review-back { background:#ea580c; color:white; }
         .review-confirm { background:#15803d; color:white; }
         .processing-message { font-size:12px; font-weight:700; text-align:center; min-height:18px; }
-        .progress-track { height:12px; border-radius:8px; border:1px solid #52634d; background:#e0e6d8; overflow:hidden; }
-        .progress-fill { width:35%; height:100%; border-radius:8px; background:linear-gradient(90deg,#15803d,#22c55e,#4ade80); animation:indeterminate 1.15s ease-in-out infinite; }
-        @keyframes indeterminate { 0% { transform:translateX(-120%); } 100% { transform:translateX(330%); } }
         .results-charts { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
         .chart-card { min-width:0; padding:14px; background:rgba(15,23,42,.7); border:1px solid rgba(255,255,255,.12); border-radius:10px; }
         .chart-card h3 { font-size:13px; margin-bottom:12px; }
@@ -269,7 +264,7 @@
         const BETA_VERSION = '6.0';
         // Fotos e candidaturas exibidas para fins demonstrativos. As fotos abaixo são do portal oficial do TSE.
         const candidates = {
-            '13': { name: 'LUIZ INÁCIO LULA DA SILVA', party: 'PT', vice: 'Geraldo Alckmin', photo: 'https://www.tse.jus.br/imagens/imagens/lula/@@images/image-200-93d51d895f8ebc8900bf3e02c7052bef.png' },
+            '13': { name: 'LUIZ INÁCIO LULA DA SILVA', party: 'PT', vice: 'Geraldo Alckmin', photo: 'https://www.tse.jus.br/imagens/imagens/lula/%40%40images/image-200-93d51d895f8ebc8900bf3e02c7052bef.png' },
             '22': { name: 'FLÁVIO BOLSONARO', party: 'PL', vice: 'Alfredo Gaspar', photo: 'https://www.tse.jus.br/imagens/imagens/flavio-bolsonaro/%40%40images/image-200-7092d276831e3453f70c59d07d5c9ae7.png' },
             '55': { name: 'RONALDO CAIADO', party: 'PSD', vice: 'Gilberto Kassab', photo: 'https://www.tse.jus.br/imagens/imagens/caiado-1/%40%40images/image-200-909d3f1cbd7921f6cd0b406fb5da9eb9.png' },
             '29': { name: 'RUI COSTA PIMENTA', party: 'PCO', vice: 'Antônio Carlos', photo: 'https://www.tse.jus.br/imagens/imagens/foto-rui-costa' },
@@ -312,6 +307,7 @@
         const PENDING_STORAGE_KEY = 'urnaBeta6PendingVotes';
         let pendingVotes = readPendingVotes();
         let processingTimer = null;
+        let processingDuration = 2600;
         let appStarted = false;
         let voteAlreadyRecorded = false;
         let localVotes = JSON.parse(localStorage.getItem('urnaVotesShared') || '[]');
@@ -381,7 +377,7 @@
                 return;
             }
             if (isProcessing) {
-                screen.innerHTML = '<div class="processing-screen"><div class="processing-title">PROCESSANDO O VOTO</div><div class="processing-subtitle">Aguarde enquanto tentamos registrar sua escolha.</div><div class="progress-track" aria-label="Barra única de processamento"><div class="progress-fill"></div></div><div class="processing-message" id="processingMessage" aria-live="polite">Preparando registro…</div><div class="processing-subtitle">A confirmação depende da resposta do servidor.</div></div>';
+                screen.innerHTML = '<div class="processing-screen"><div class="processing-title">PROCESSANDO O VOTO</div><div class="processing-subtitle">Aguarde enquanto tentamos registrar sua escolha.</div><div class="progress-track" role="progressbar" aria-label="Processamento do voto" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill" style="--load-duration:${processingDuration}ms"></div></div><div class="processing-message" id="processingMessage" aria-live="polite">Preparando registro…</div><div class="processing-subtitle">A confirmação depende da resposta do servidor.</div></div>';
                 return;
             }
             if (isReview) {
@@ -617,8 +613,9 @@
                 if(result.confirmed) {
                     message='VOTO DE DEMONSTRAÇÃO CONFIRMADO ONLINE'; setConnectionStatus('online');
                 } else if(result.reason==='migration') {
-                    message='BANCO PRECISA DA MIGRAÇÃO BETA 6.0 — VOTO NÃO CONFIRMADO'; setConnectionStatus('error');
-                    console.error('Aplique a migração SQL da Beta 6.0 antes de testar:',result.message);
+                    pendingVotes.push(vote); savePendingVotes();
+                    message='PENDENTE — BANCO PRECISA DA MIGRAÇÃO BETA 6.0'; setConnectionStatus('error');
+                    console.error('Aplique a migração SQL da Beta 6.0 antes de sincronizar:',result.message);
                 } else {
                     pendingVotes.push(vote); savePendingVotes();
                     message='REGISTRO PENDENTE — AINDA NÃO CONFIRMADO PELO SERVIDOR'; setConnectionStatus('offline');
@@ -638,7 +635,8 @@
             }
             isProcessing=true; isReview=false; playUrnaVoteSound(); renderScreen(); startProcessingMessages();
             const durations=[850,1500,2600,4100,5600];
-            const duration=durations[Math.floor(Math.random()*durations.length)]*(0.9+Math.random()*0.2);
+            processingDuration=Math.round(durations[Math.floor(Math.random()*durations.length)]*(0.9+Math.random()*0.2));
+            renderScreen();
             processingTimer=setTimeout(()=>finishVote().catch(error=>{
                 console.error('Erro inesperado ao finalizar o voto:',error);
                 clearInterval(processingMessageTimer); isProcessing=false; isFim=true; setConnectionStatus('error');
