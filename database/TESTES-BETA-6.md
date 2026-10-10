@@ -4,11 +4,12 @@
 
 ## Antes de testar o envio online
 
-1. Revise `database/beta-6-migration-manual.sql`.
-2. Faça backup/revisão do banco.
-3. Execute a migração manualmente no SQL Editor do Supabase somente quando estiver autorizado.
-4. Verifique que `count(*) = count(distinct vote_id)` na tabela `public.urna_votes`.
-5. Confirme que a tabela continua com RLS habilitado e que as políticas de leitura/inserção esperadas continuam ativas.
+- [x] Migração `vote_id` aplicada ao projeto Supabase conectado.
+- [x] Identificadores preenchidos e únicos nos 14 registros existentes durante a verificação.
+- [x] RLS continua habilitado na tabela `public.urna_votes`.
+- [ ] Confirmar em teste de navegador que a Beta 5.0 continua inserindo registros usando o valor padrão de `vote_id`.
+- [ ] Confirmar em teste de navegador que a Beta 6.0 registra um voto com `vote_id` e que uma tentativa repetida não duplica o registro.
+- Para reproduzir em outro projeto, revise `database/beta-6-migration-manual.sql`, faça backup e só então aplique a migração nesse ambiente.
 
 ## Fluxo de votação
 
@@ -35,6 +36,14 @@
 - [ ] Gráfico de barras e gráfico de setores mostram as mesmas categorias e proporções.
 - [ ] Votos pendentes locais aparecem em separado.
 - [ ] Duas janelas abertas atualizam os resultados quando o Realtime notifica novos registros.
+
+## Verificações já feitas
+
+- [x] Sintaxe JavaScript validada sem erro.
+- [x] IDs principais da interface presentes e sem IDs HTML duplicados.
+- [x] Barra única usa a duração selecionada para o processamento.
+- [x] Foto do Lula corrigida para usar a mesma codificação de URL das outras fotos do TSE.
+- [ ] Teste completo de interface em navegador ainda pendente.
 
 ## Limites conhecidos a validar
 
