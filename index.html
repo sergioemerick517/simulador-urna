@@ -305,6 +305,11 @@
         let isBranco = false;
         let isFim = false;
         let isProcessing = false;
+        let isReview = false;
+        let processingMessageTimer = null;
+        let dashboardVotes = [];
+        const PENDING_STORAGE_KEY = 'urnaBeta6PendingVotes';
+        let pendingVotes = readPendingVotes();
         let processingTimer = null;
         let appStarted = false;
         let voteAlreadyRecorded = false;
@@ -375,7 +380,14 @@
                 return;
             }
             if (isProcessing) {
-                screen.innerHTML = `<div class="processing-screen"><div class="processing-title">REGISTRANDO SEU VOTO</div><div class="processing-subtitle">Aguarde enquanto a demonstração processa a confirmação.</div><div class="progress-list" aria-label="Barra de carregamento do voto"><div class="progress-track"><div class="progress-fill" style="--load-duration:${window.voteLoadDuration || 2.6}s"></div></div></div><div class="processing-subtitle">Não feche esta tela.</div></div>`;
+                screen.innerHTML = '<div class="processing-screen"><div class="processing-title">PROCESSANDO O VOTO</div><div class="processing-subtitle">Aguarde enquanto tentamos registrar sua escolha.</div><div class="progress-track" aria-label="Barra única de processamento"><div class="progress-fill"></div></div><div class="processing-message" id="processingMessage" aria-live="polite">Preparando registro…</div><div class="processing-subtitle">A confirmação depende da resposta do servidor.</div></div>';
+                return;
+            }
+            if (isReview) {
+                const candidate = candidates[currentDigits];
+                const label = isBranco ? 'VOTO EM BRANCO' : (candidate ? candidate.name : 'VOTO NULO');
+                const number = isBranco ? 'BRANCO' : currentDigits;
+                screen.innerHTML = \`<div class="review-screen"><div class="screen-header">REVISE SUA ESCOLHA</div><h2>CONFIRMAÇÃO DO VOTO</h2><div class="review-summary"><strong>\${escapeHtml(label)}</strong><span>\${isBranco ? 'Você selecionou voto em branco.' : (candidate ? 'Número ' + escapeHtml(number) + ' · ' + escapeHtml(candidate.party) : 'O número digitado não corresponde a uma candidatura cadastrada.')}</span></div><p style="font-size:12px;text-align:center">Confira antes de registrar. Você ainda pode voltar e corrigir.</p><div class="review-actions"><button type="button" class="review-back" onclick="pressCorrige()">CORRIGIR</button><button type="button" class="review-confirm" onclick="pressConfirma()">CONFIRMAR VOTO</button></div><div class="screen-footer">APERTE <strong>CONFIRMA</strong> PARA CONTINUAR OU <strong>CORRIGE</strong> PARA VOLTAR</div></div>\`;
                 return;
             }
             if (isFim) {
@@ -475,32 +487,42 @@
         }
 
         async function renderDashboard() {
-            const { data: votes, error } = await supabaseClient
-                .from('urna_votes')
-                .select('candidate_number,candidate_name,vote_type,version,created_at')
-                .order('created_at', { ascending: true });
-            if (error) {
-                console.error('Não foi possível carregar os votos online:', error.message);
-                return;
-            }
-            const allVotes = votes || [];
-            const total = allVotes.length;
-            const beta50 = allVotes.filter(v => String(v.version) === '5.0').length;
-            document.getElementById('universalTotal').textContent = total;
-            document.getElementById('beta50Total').textContent = beta50;
+            const { data: votes, error } = await supabaseClient.from('urna_votes').select('candidate_number,candidate_name,vote_type,version,created_at').order('created_at', { ascending: true });
+            if (error) { console.error('Não foi possível carregar os votos online:', error.message); setConnectionStatus(navigator.onLine ? 'error' : 'offline'); return; }
+            dashboardVotes = votes || [];
+            const allVotes = dashboardVotes, total = allVotes.length;
+            const blank = allVotes.filter(v => v.vote_type === 'branco' || v.candidate_number === 'BRANCO').length;
+            const nulled = allVotes.filter(v => v.vote_type === 'nulo' || v.candidate_number === 'NULO').length;
             document.getElementById('allTotal').textContent = total;
-            const versions = ['1','2','3','4','4.1','5.0'];
-            const versionRows = versions.map(v => `<tr><td>${v==='5.0'?'Beta 5.0 (atual)':'Beta '+v}</td><td>${allVotes.filter(x => String(x.version)===v).length}</td></tr>`).join('');
-            document.getElementById('versionVoteRows').innerHTML = versionRows + `<tr><td>Outras versões</td><td>${allVotes.filter(x => !versions.includes(String(x.version))).length}</td></tr>`;
+            document.getElementById('beta60Total').textContent = allVotes.filter(v => String(v.version) === '6.0').length;
+            document.getElementById('blankTotal').textContent = blank;
+            document.getElementById('nullTotal').textContent = nulled;
+            document.getElementById('candidateTotal').textContent = total - blank - nulled;
+            document.getElementById('pendingTotal').textContent = pendingVotes.length;
+            const versions = ['1','2','3','4','4.1','5.0','6.0'];
+            document.getElementById('versionVoteRows').innerHTML = versions.map(v => \`<tr><td>\${v==='6.0'?'Beta 6.0 (em desenvolvimento)':'Beta '+v}</td><td>\${allVotes.filter(x => String(x.version)===v).length}</td></tr>\`).join('') + \`<tr><td>Outras versões</td><td>\${allVotes.filter(x => !versions.includes(String(x.version))).length}</td></tr>\`;
             const tally = {};
-            allVotes.forEach(v => { const label = v.candidate_name || v.candidate_number || 'Não identificado'; tally[label] = (tally[label] || 0) + 1; });
+            allVotes.forEach(v => { const label = v.vote_type === 'branco' || v.candidate_number === 'BRANCO' ? 'Voto em branco' : v.vote_type === 'nulo' || v.candidate_number === 'NULO' ? 'Voto nulo' : (v.candidate_name || v.candidate_number || 'Não identificado'); tally[label] = (tally[label] || 0) + 1; });
             const entries = Object.entries(tally).sort((a,b) => b[1]-a[1]);
-            document.getElementById('candidateVoteRows').innerHTML = entries.length ? entries.map(([name,count]) => `<tr><td>${escapeHtml(name)}</td><td>${count}</td></tr>`).join('') : '<tr><td colspan="2">Nenhum voto registrado ainda.</td></tr>';
+            document.getElementById('candidateVoteRows').innerHTML = entries.length ? entries.map(([name,count]) => \`<tr><td>\${escapeHtml(name)}</td><td>\${count}</td><td>\${total ? (count*100/total).toFixed(1).replace('.',',')+'%' : '0%'}</td></tr>\`).join('') : '<tr><td colspan="3">Nenhum voto confirmado ainda.</td></tr>';
+            renderResultCharts(entries, total);
+            updatePendingCount();
+        }
+        function renderResultCharts(entries,total) {
+            const palette=['#38bdf8','#34d399','#fbbf24','#c084fc','#fb7185','#a3e635','#f97316','#818cf8','#2dd4bf','#e879f9','#facc15','#94a3b8'];
+            const bars=document.getElementById('resultsBars'), pie=document.getElementById('resultsPie'), legend=document.getElementById('resultsLegend');
+            if(!bars||!pie||!legend)return;
+            if(!entries.length||!total){bars.innerHTML='<p class="empty-chart">Ainda não há votos confirmados.</p>';pie.style.background='#334155';legend.innerHTML='<span class="empty-chart">Sem dados para exibir.</span>';return;}
+            bars.innerHTML=entries.map(([name,count],i)=>{const pct=count*100/total;return \`<div class="bar-row"><span class="bar-label" title="\${escapeHtml(name)}">\${escapeHtml(name)}</span><div class="bar-track"><div class="bar-fill" style="width:\${pct}%;background:\${palette[i%palette.length]}"></div></div><span class="bar-value">\${count} · \${pct.toFixed(1).replace('.',',')}%</span></div>\`;}).join('');
+            let offset=0;
+            const segments=entries.map(([name,count],i)=>{const start=offset;offset+=count*100/total;return {name,count,pct:count*100/total,color:palette[i%palette.length],start,end:offset};});
+            pie.style.background='conic-gradient('+segments.map(s=>\`\${s.color} \${s.start}% \${s.end}%\`).join(',')+')';
+            legend.innerHTML=segments.map(s=>\`<div class="legend-item"><span class="legend-swatch" style="background:\${s.color}"></span><span>\${escapeHtml(s.name)} — \${s.pct.toFixed(1).replace('.',',')}%</span></div>\`).join('');
         }
 
-        function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+                function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-        function startVoting() { appStarted = true; currentDigits=''; isBranco=false; isFim=false; playStart(); renderScreen(); }
+        function startVoting() { appStarted = true; currentDigits=''; isBranco=false; isFim=false; isReview=false; playStart(); renderScreen(); }
 
         function pressNumber(num) {
             if (!appStarted || isFim || isProcessing || isBranco || currentDigits.length >= 2) return;
@@ -520,6 +542,7 @@
         function pressCorrige() {
             if (!appStarted || isFim || isProcessing) return;
             playCorrection();
+            isReview = false;
             isBranco = false;
             currentDigits = '';
             renderScreen();
