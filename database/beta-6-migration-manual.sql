@@ -1,14 +1,15 @@
 -- Simulador da Urna — Beta 6.0
--- Migração MANUAL para preparar a proteção contra registros duplicados.
--- Não foi aplicada automaticamente ao banco de produção.
--- Faça backup/revisão antes de executar no SQL Editor do Supabase.
-
-begin;
+-- Migração aditiva e compatível com a Beta 5.0 publicada.
+-- A coluna tem DEFAULT para que a Beta 5.0, que não envia vote_id, continue inserindo registros.
+-- Revise o SQL e faça backup antes de aplicá-lo em outro ambiente.
 
 alter table public.urna_votes
     add column if not exists vote_id text;
 
--- Mantém compatibilidade com os registros antigos que não tinham identificador.
+alter table public.urna_votes
+    alter column vote_id set default gen_random_uuid()::text;
+
+-- Mantém identificadores para os registros antigos.
 update public.urna_votes
 set vote_id = 'legacy-' || id::text
 where vote_id is null;
@@ -30,7 +31,8 @@ begin
 end
 $$;
 
-commit;
+-- Solicita ao PostgREST recarregar o cache do esquema.
+notify pgrst, 'reload schema';
 
 -- Verificação depois de executar:
 -- select count(*) as total, count(distinct vote_id) as identificadores_unicos
