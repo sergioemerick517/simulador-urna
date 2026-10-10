@@ -36,9 +36,13 @@ Explore uma experiência inspirada no processo de votação brasileiro, com inte
 
 ## 🛠️ Tecnologias
 
-- HTML, CSS e JavaScript
-- GitHub Pages para publicação
-- Supabase para armazenamento online e sincronização dos registros
+- **HTML** — estrutura da página e dos elementos da urna.
+- **CSS** — estilos, cores, layout e aparência visual.
+- **JavaScript** — lógica da votação, interação com o teclado, sons, processamento e atualização da interface.
+- **SQL / PostgreSQL (Supabase)** — banco de dados usado para armazenar os registros de demonstração; as consultas e a estrutura do banco são gerenciadas pelo Supabase.
+- **GitHub Pages** — publicação do site.
+
+> **Observação sobre o GitHub:** no momento, parte do CSS e do JavaScript está escrita dentro do arquivo `index.html`. Por isso, a seção automática **Languages** do GitHub pode mostrar principalmente HTML, mesmo que o projeto também use CSS e JavaScript. Essa seção é calculada pelos tipos de arquivo do repositório, não pela lista acima.
 
 ## 📌 Sobre o projeto
 
