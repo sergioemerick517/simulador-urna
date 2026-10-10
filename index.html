@@ -548,37 +548,98 @@
             renderScreen();
         }
 
-        async function pressConfirma() {
-            if (!appStarted || isFim || isProcessing) return;
-            if (currentDigits.length === 2 || isBranco) {
-                isProcessing = true;
-                playUrnaVoteSound(); // som "PIÉ" ao confirmar o voto
-                // A barra única usa um entre cinco tempos possíveis a cada confirmação.
-                const possibleDurations = [850, 1500, 2600, 4100, 5600];
-                const duration = possibleDurations[Math.floor(Math.random() * possibleDurations.length)] * (0.9 + Math.random() * 0.2);
-                window.voteLoadDuration = (duration / 1000).toFixed(2);
-                renderScreen();
-                processingTimer = setTimeout(async () => {
-                    const candidate = candidates[currentDigits];
-                    const vote = {
-                        candidate_number: isBranco ? 'BRANCO' : (candidate ? currentDigits : 'NULO'),
-                        candidate_name: isBranco ? 'Voto em branco' : (candidate ? candidate.name : 'Voto nulo'),
-                        vote_type: isBranco ? 'branco' : (candidate ? 'candidato' : 'nulo'),
-                        version: BETA_VERSION
-                    };
-                    const { error } = await supabaseClient.from('urna_votes').insert(vote);
-                    if (error) {
-                        console.error('Falha ao registrar voto online:', error.message);
-                        alert('Não foi possível registrar o voto online. Verifique sua conexão e tente novamente.');
-                    }
-                    await renderDashboard();
-                    isProcessing = false;
-                    isFim = true;
-                    playUrnaFimSound();
-                    renderScreen();
-                    setTimeout(() => { isFim = false; isBranco = false; currentDigits = ''; voteAlreadyRecorded = false; renderScreen(); }, 3000);
-                }, duration + 150);
+        function readPendingVotes() {
+            try { const value=JSON.parse(localStorage.getItem(PENDING_STORAGE_KEY)||'[]'); return Array.isArray(value)?value:[]; }
+            catch(error) { return []; }
+        }
+        function savePendingVotes() {
+            try { localStorage.setItem(PENDING_STORAGE_KEY,JSON.stringify(pendingVotes)); return true; }
+            catch(error) { console.error('Não foi possível guardar a fila offline:',error); return false; }
+        }
+        function createVoteId() {
+            if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();
+            return 'vote-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)+'-'+Math.random().toString(36).slice(2);
+        }
+        function setConnectionStatus(state) {
+            const el=document.getElementById('connectionStatus'); if(!el)return;
+            const labels={online:'● Online',offline:'● Offline',syncing:'● Sincronizando',error:'● Verificar conexão'};
+            el.dataset.state=state; el.textContent=labels[state]||labels.error;
+        }
+        function updatePendingCount() {
+            const el=document.getElementById('pendingTotal'); if(el)el.textContent=pendingVotes.length;
+        }
+        function startProcessingMessages() {
+            const messages=['Preparando registro…','Enviando ao servidor…','Aguardando confirmação…','Verificando resposta…'];
+            let index=0; clearInterval(processingMessageTimer);
+            processingMessageTimer=setInterval(()=>{index=(index+1)%messages.length;const el=document.getElementById('processingMessage');if(el)el.textContent=messages[index];},900);
+        }
+        async function storeVoteOnline(vote) {
+            if(!navigator.onLine)return {confirmed:false,reason:'offline'};
+            setConnectionStatus('syncing');
+            const {error}=await supabaseClient.from('urna_votes').insert(vote);
+            if(!error)return {confirmed:true};
+            if(error.code==='23505') {
+                const {data,error:lookupError}=await supabaseClient.from('urna_votes').select('id').eq('vote_id',vote.vote_id).maybeSingle();
+                if(!lookupError&&data)return {confirmed:true,duplicate:true};
             }
+            if(['PGRST204','42703','PGRST200'].includes(error.code)||/vote_id|schema cache|column/i.test(error.message||''))return {confirmed:false,reason:'migration',message:error.message};
+            return {confirmed:false,reason:'network',message:error.message};
+        }
+        async function syncPendingVotes() {
+            if(!navigator.onLine){setConnectionStatus('offline');updatePendingCount();return;}
+            if(!pendingVotes.length){setConnectionStatus('online');updatePendingCount();return;}
+            setConnectionStatus('syncing');
+            const remaining=[];
+            for(const vote of pendingVotes) {
+                const result=await storeVoteOnline(vote);
+                if(!result.confirmed) {
+                    remaining.push(vote);
+                    if(result.reason==='migration'){console.error('A migração SQL da Beta 6.0 ainda é necessária:',result.message);break;}
+                }
+            }
+            pendingVotes=remaining; savePendingVotes(); updatePendingCount();
+            await renderDashboard();
+            setConnectionStatus(pendingVotes.length?(navigator.onLine?'error':'offline'):'online');
+        }
+        async function finishVote() {
+            const candidate=candidates[currentDigits];
+            const vote={vote_id:createVoteId(),candidate_number:isBranco?'BRANCO':(candidate?currentDigits:'NULO'),candidate_name:isBranco?'Voto em branco':(candidate?candidate.name:'Voto nulo'),vote_type:isBranco?'branco':(candidate?'candidato':'nulo'),version:BETA_VERSION};
+            let message='';
+            if(!navigator.onLine) {
+                pendingVotes.push(vote); savePendingVotes();
+                message='REGISTRO PENDENTE — AINDA NÃO CONFIRMADO ONLINE'; setConnectionStatus('offline');
+            } else {
+                const result=await storeVoteOnline(vote);
+                if(result.confirmed) {
+                    message='VOTO DE DEMONSTRAÇÃO CONFIRMADO ONLINE'; setConnectionStatus('online');
+                } else if(result.reason==='migration') {
+                    message='BANCO PRECISA DA MIGRAÇÃO BETA 6.0 — VOTO NÃO CONFIRMADO'; setConnectionStatus('error');
+                    console.error('Aplique a migração SQL da Beta 6.0 antes de testar:',result.message);
+                } else {
+                    pendingVotes.push(vote); savePendingVotes();
+                    message='REGISTRO PENDENTE — AINDA NÃO CONFIRMADO PELO SERVIDOR'; setConnectionStatus('offline');
+                }
+            }
+            clearInterval(processingMessageTimer); isProcessing=false; isFim=true;
+            document.getElementById('screen').innerHTML=\`<div class="fim-screen">FIM<small>\${escapeHtml(message)}</small><small>Obrigado por participar</small></div>\`;
+            if(message.includes('CONFIRMADO ONLINE'))playUrnaFimSound();
+            updatePendingCount(); await renderDashboard();
+            setTimeout(()=>{isFim=false;isReview=false;isBranco=false;currentDigits='';voteAlreadyRecorded=false;renderScreen();},3500);
+        }
+        async function pressConfirma() {
+            if(!appStarted||isFim||isProcessing)return;
+            if(!isReview) {
+                if(currentDigits.length!==2&&!isBranco)return;
+                isReview=true; renderScreen(); return;
+            }
+            isProcessing=true; isReview=false; playUrnaVoteSound(); renderScreen(); startProcessingMessages();
+            const durations=[850,1500,2600,4100,5600];
+            const duration=durations[Math.floor(Math.random()*durations.length)]*(0.9+Math.random()*0.2);
+            processingTimer=setTimeout(()=>finishVote().catch(error=>{
+                console.error('Erro inesperado ao finalizar o voto:',error);
+                clearInterval(processingMessageTimer); isProcessing=false; isFim=true; setConnectionStatus('error');
+                document.getElementById('screen').innerHTML='<div class="fim-screen">!<small>Erro inesperado. O registro não foi confirmado.</small></div>';
+            }),duration+150);
         }
 
         // Beta 5.0: os votos demonstrativos são registrados no banco online compartilhado.
@@ -590,14 +651,20 @@
             else if (e.key.toLowerCase() === 'b') pressBranco();
         });
 
-        supabaseClient.channel('urna-votes-live')
+        supabaseClient.channel('urna-votes-live-beta6')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'urna_votes' }, () => renderDashboard())
-            .subscribe();
+            .subscribe((status) => { if(status==='SUBSCRIBED')setConnectionStatus(navigator.onLine?'online':'offline'); });
 
+        window.addEventListener('online',()=>{setConnectionStatus('syncing');syncPendingVotes();});
+        window.addEventListener('offline',()=>setConnectionStatus('offline'));
         applyUrnaModel('2026');
+        setConnectionStatus(navigator.onLine?'online':'offline');
         renderScreen();
         renderDashboard();
-        window.addEventListener('storage', (event) => { if (event.key === 'urnaVotesShared') renderDashboard(); });
+        syncPendingVotes();
+        window.addEventListener('storage',(event)=>{
+            if(event.key===PENDING_STORAGE_KEY){pendingVotes=readPendingVotes();updatePendingCount();renderDashboard();}
+        });
     </script>
 </body>
 </html>
