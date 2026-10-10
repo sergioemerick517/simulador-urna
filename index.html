@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador da Urna Eletrônica — Beta 5.0</title>
+    <title>Simulador da Urna Eletrônica — Beta 6.0 (em desenvolvimento)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
         body { background:radial-gradient(ellipse at top,#1d3444 0%,#121824 48%,#0b1120 100%); color:#fff; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:20px; }
@@ -120,7 +120,7 @@
 
     <div class="header-bar">
         <div>
-            <span class="badge-beta">BETA 5.0 · ONLINE</span>
+            <span class="badge-beta">BETA 6.0 · EM DESENVOLVIMENTO</span>
             <strong style="margin-left: 10px;">Simulador da Urna Eletrônica</strong>
         </div>
         <div style="font-size: 12px; color: #94a3b8;">
@@ -130,7 +130,7 @@
 
     <nav class="top-menu" aria-label="Menu do simulador">
         <button type="button" aria-controls="updatesPanel" aria-expanded="false" onclick="toggleInfoPanel('updatesPanel', this)">📋 Atualizações</button>
-        <button type="button" aria-controls="voteStats" aria-expanded="false" onclick="toggleInfoPanel('voteStats', this)">📊 Votos do simulador</button>
+        <button type="button" aria-controls="voteStats" aria-expanded="false" onclick="toggleInfoPanel('voteStats', this)">📈 Resultados detalhados</button>
         <button type="button" aria-controls="realResults" aria-expanded="false" onclick="toggleInfoPanel('realResults', this)">🏛️ Eleições reais</button>
         <button type="button" onclick="openAboutModal()">ℹ️ Sobre o site</button>
         <div class="model-selector">
@@ -178,7 +178,7 @@
 
     <div class="about-modal" id="aboutModal" hidden role="dialog" aria-modal="true" aria-labelledby="aboutTitle" onclick="if(event.target===this) closeAboutModal()">
         <div class="about-dialog">
-            <h2 id="aboutTitle">Sobre o Simulador da Urna · Beta 5.0</h2>
+            <h2 id="aboutTitle">Sobre o Simulador da Urna · Beta 6.0</h2>
             <p>Projeto independente e educativo que reproduz visualmente uma urna eletrônica para demonstrar, de forma interativa, as etapas de uma votação fictícia.</p>
             <p><strong>Novidades da Beta 5.0:</strong> os votos de demonstração são enviados ao Supabase, um banco de dados online compartilhado. O painel de resultados pode atualizar em tempo real entre diferentes navegadores e visitantes.</p>
             <p><strong>Este projeto não é oficial do Governo Federal, do TSE ou da Justiça Eleitoral.</strong> Os votos são fictícios, não têm validade eleitoral e não devem ser usados em eleições reais.</p>
@@ -226,7 +226,7 @@
         const SUPABASE_URL = 'https://qfsagbhcrixipxajggdl.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_Y85l8Da_cJD6EiJeFueiJg_Fh-jLGy4';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        const BETA_VERSION = '5.0';
+        const BETA_VERSION = '6.0';
         // Fotos e candidaturas exibidas para fins demonstrativos. As fotos abaixo são do portal oficial do TSE.
         const candidates = {
             '13': { name: 'LUIZ INÁCIO LULA DA SILVA', party: 'PT', vice: 'Geraldo Alckmin', photo: 'https://www.tse.jus.br/imagens/imagens/lula/@@images/image-200-93d51d895f8ebc8900bf3e02c7052bef.png' },
