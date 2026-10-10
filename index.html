@@ -212,7 +212,7 @@
         <div class="about-dialog">
             <h2 id="aboutTitle">Sobre o Simulador da Urna · Beta 6.0</h2>
             <p>Projeto independente e educativo que reproduz visualmente uma urna eletrônica para demonstrar, de forma interativa, as etapas de uma votação fictícia.</p>
-            <p><strong>Novidades da Beta 5.0:</strong> os votos de demonstração são enviados ao Supabase, um banco de dados online compartilhado. O painel de resultados pode atualizar em tempo real entre diferentes navegadores e visitantes.</p>
+            <p><strong>Novidades em desenvolvimento para a Beta 6.0:</strong> revisão antes da confirmação, resultados com gráficos, fila offline e proteção contra registros duplicados. O envio online exige a migração de banco documentada nesta branch.</p>
             <p><strong>Este projeto não é oficial do Governo Federal, do TSE ou da Justiça Eleitoral.</strong> Os votos são fictícios, não têm validade eleitoral e não devem ser usados em eleições reais.</p>
             <p>O simulador é independente e gratuito. Os modelos de urna são representações visuais; “UrnaLab 2026” é um conceito fictício criado para este site.</p>
             <button class="modal-close" type="button" onclick="closeAboutModal()">Entendi</button>
@@ -229,6 +229,7 @@
             <details><summary>Beta 4 — versão anterior</summary><ul><li>Seletor de modelos UE 2022, UE 2020, UE 2015 e UE 2013.</li><li>Variações visuais do gabinete, tela e teclado.</li></ul></details>
             <details><summary>Beta 4.1 — correções, sons e carregamento</summary><ul><li>Sons eletrônicos sintetizados para teclas, correção, voto em branco, início e confirmação.</li><li>Uma única barra verde de processamento, com um entre cinco tempos possíveis escolhido a cada voto.</li><li>Registro demonstrativo após o fim do carregamento.</li><li>Modelo fictício “UrnaLab 2026” e alternativas visuais para fotos indisponíveis.</li></ul></details>
             <details open><summary>Beta 5.0 — lançamento online</summary><ul><li>Site publicado no GitHub Pages, acessível por um link público.</li><li>Banco de dados Supabase para compartilhar os votos demonstrativos entre visitantes e navegadores.</li><li>Atualização em tempo real do painel quando novos votos são registrados.</li><li>Contagem geral, contagem por versão e resultados por opção.</li><li>Identificação visual da Beta 5.0, informações do projeto e descrição das novidades.</li><li>Interface responsiva para telas grandes e celulares, com sons e processamento visual.</li><li>Modelos visuais de urna e aviso explícito de que o projeto não é oficial.</li></ul></details>
+            <details><summary>Beta 6.0 — última versão Beta (em desenvolvimento)</summary><ul><li>Revisão da escolha antes de confirmar o registro.</li><li>Barra única animada com mensagens de processamento e status da conexão.</li><li>Painel dedicado com gráficos de barras e setores, percentuais e totais detalhados.</li><li>Fila local de registros pendentes e tentativa de sincronização ao recuperar a conexão.</li><li>Identificador único persistente e restrição única no banco para reduzir duplicações em reenvios.</li><li>Esta versão ainda não foi publicada; a Beta 5.0 continua sendo a versão pública.</li></ul></details>
         </div>
 
         <div class="info-card" id="voteStats" hidden>
