@@ -633,10 +633,10 @@
                 if(currentDigits.length!==2&&!isBranco)return;
                 isReview=true; renderScreen(); return;
             }
-            isProcessing=true; isReview=false; playUrnaVoteSound(); renderScreen(); startProcessingMessages();
+            isProcessing=true; isReview=false; playUrnaVoteSound();
             const durations=[850,1500,2600,4100,5600];
             processingDuration=Math.round(durations[Math.floor(Math.random()*durations.length)]*(0.9+Math.random()*0.2));
-            renderScreen();
+            renderScreen(); startProcessingMessages();
             processingTimer=setTimeout(()=>finishVote().catch(error=>{
                 console.error('Erro inesperado ao finalizar o voto:',error);
                 clearInterval(processingMessageTimer); isProcessing=false; isFim=true; setConnectionStatus('error');
