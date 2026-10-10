@@ -113,7 +113,39 @@
         .vote-table th { color:#94a3b8; }
         .official-link { display:inline-block; margin-top:10px; background:#e2e8f0; color:#0f172a; padding:10px 14px; border-radius:7px; font-weight:700; font-size:13px; text-decoration:none; }
         .small-note { color:#fbbf24!important; font-size:12px!important; margin-top:8px; }
-        @media(max-width:720px) { .top-menu { display:grid; grid-template-columns:1fr 1fr; } .top-menu button { width:100%; } .model-selector { grid-column:1 / -1; margin-left:0; padding:4px 0; flex-wrap:wrap; } .model-selector select { max-width:100%; width:100%; } .urna-cabinet { flex-direction:column; padding:42px 16px 16px; gap:16px; } .model-plaque { top:8px; right:8px; max-width:calc(100% - 16px); overflow:hidden; text-overflow:ellipsis; } .screen-container { flex:auto; height:360px; } .secondary-controls { grid-template-columns:1fr; } .header-bar { gap:10px; align-items:flex-start; flex-direction:column; } .stats-grid {grid-template-columns:1fr;} .vote-table {font-size:11px;} }
+        .connection-status { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:800; color:#86efac; }
+        .connection-status[data-state="offline"] { color:#fca5a5; }
+        .connection-status[data-state="syncing"] { color:#fde68a; }
+        .connection-status[data-state="error"] { color:#fdba74; }
+        .review-screen { display:flex; flex-direction:column; justify-content:center; gap:14px; min-height:100%; color:#111827; }
+        .review-screen h2 { font-size:20px; text-align:center; }
+        .review-summary { padding:14px; border:1px solid #64748b; background:rgba(255,255,255,.35); border-radius:8px; text-align:center; }
+        .review-summary strong { display:block; font-size:18px; margin-bottom:6px; }
+        .review-actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+        .review-actions button { border:0; border-radius:5px; padding:11px 14px; font-weight:800; cursor:pointer; }
+        .review-back { background:#ea580c; color:white; }
+        .review-confirm { background:#15803d; color:white; }
+        .processing-message { font-size:12px; font-weight:700; text-align:center; min-height:18px; }
+        .progress-track { height:12px; border-radius:8px; border:1px solid #52634d; background:#e0e6d8; overflow:hidden; }
+        .progress-fill { width:35%; height:100%; border-radius:8px; background:linear-gradient(90deg,#15803d,#22c55e,#4ade80); animation:indeterminate 1.15s ease-in-out infinite; }
+        @keyframes indeterminate { 0% { transform:translateX(-120%); } 100% { transform:translateX(330%); } }
+        .results-charts { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+        .chart-card { min-width:0; padding:14px; background:rgba(15,23,42,.7); border:1px solid rgba(255,255,255,.12); border-radius:10px; }
+        .chart-card h3 { font-size:13px; margin-bottom:12px; }
+        .bar-chart { display:flex; flex-direction:column; gap:10px; }
+        .bar-row { display:grid; grid-template-columns:minmax(75px,1fr) 2fr auto; gap:8px; align-items:center; font-size:11px; }
+        .bar-label { overflow-wrap:anywhere; color:#e2e8f0; }
+        .bar-track { height:10px; background:#334155; border-radius:8px; overflow:hidden; }
+        .bar-fill { height:100%; border-radius:8px; }
+        .bar-value { color:#cbd5e1; font-variant-numeric:tabular-nums; }
+        .pie-layout { display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; }
+        .pie-chart { width:140px; height:140px; border-radius:50%; background:#334155; flex:0 0 auto; }
+        .pie-legend { display:flex; flex-direction:column; gap:7px; font-size:11px; min-width:100px; }
+        .legend-item { display:flex; align-items:center; gap:7px; }
+        .legend-swatch { width:10px; height:10px; border-radius:3px; flex:0 0 auto; }
+        .empty-chart { color:#94a3b8; font-size:12px; }
+
+        @media(max-width:720px) { .results-charts { grid-template-columns:1fr; } .bar-row { grid-template-columns:minmax(80px,1fr) 1.4fr auto; } .top-menu { display:grid; grid-template-columns:1fr 1fr; } .top-menu button { width:100%; } .model-selector { grid-column:1 / -1; margin-left:0; padding:4px 0; flex-wrap:wrap; } .model-selector select { max-width:100%; width:100%; } .urna-cabinet { flex-direction:column; padding:42px 16px 16px; gap:16px; } .model-plaque { top:8px; right:8px; max-width:calc(100% - 16px); overflow:hidden; text-overflow:ellipsis; } .screen-container { flex:auto; height:360px; } .secondary-controls { grid-template-columns:1fr; } .header-bar { gap:10px; align-items:flex-start; flex-direction:column; } .stats-grid {grid-template-columns:1fr;} .vote-table {font-size:11px;} }
     </style>
 </head>
 <body>
@@ -124,7 +156,7 @@
             <strong style="margin-left: 10px;">Simulador da Urna Eletrônica</strong>
         </div>
         <div style="font-size: 12px; color: #94a3b8;">
-            Teclas: 0-9 | Backspace | Enter | B (Branco)
+            <span class="connection-status" id="connectionStatus" role="status" aria-live="polite">● Verificando conexão</span><br>Teclas: 0-9 | Backspace | Enter | B (Branco)
         </div>
     </div>
 
@@ -200,16 +232,23 @@
         </div>
 
         <div class="info-card" id="voteStats" hidden>
-            <h2>📊 Votos do simulador</h2>
-            <p>Contagem compartilhada online: os votos são lidos do banco de dados Supabase.</p>
+            <h2>📈 Resultados detalhados</h2>
+            <p>O painel mostra somente votos confirmados no banco compartilhado. Registros guardados neste navegador aparecem separadamente como pendentes.</p>
             <div class="stats-grid">
-                <div class="stat-box"><span>Votos universais (todas as versões)</span><strong id="universalTotal">0</strong></div>
-                <div class="stat-box"><span>Votos registrados na Beta 5.0</span><strong id="beta50Total">0</strong></div>
-                <div class="stat-box"><span>Votos totais do simulador</span><strong id="allTotal">0</strong></div>
+                <div class="stat-box"><span>Total de votos confirmados online</span><strong id="allTotal">0</strong></div>
+                <div class="stat-box"><span>Votos registrados na Beta 6.0</span><strong id="beta60Total">0</strong></div>
+                <div class="stat-box"><span>Votos em branco</span><strong id="blankTotal">0</strong></div>
+                <div class="stat-box"><span>Votos nulos</span><strong id="nullTotal">0</strong></div>
+                <div class="stat-box"><span>Votos para candidaturas</span><strong id="candidateTotal">0</strong></div>
+                <div class="stat-box"><span>Pendentes neste navegador</span><strong id="pendingTotal">0</strong></div>
             </div>
-            <details open><summary>Contagem por versão (Beta 1, 2, 3, 4, 4.1 e 5.0)</summary><table class="vote-table"><thead><tr><th>Versão</th><th>Votos</th></tr></thead><tbody id="versionVoteRows"></tbody></table></details>
-            <details><summary>Votos por opção</summary><table class="vote-table"><thead><tr><th>Opção</th><th>Votos</th></tr></thead><tbody id="candidateVoteRows"></tbody></table></details>
-            <p class="small-note">Este é um simulador educativo de demonstração, não uma votação oficial. Os votos enviados online podem ser visualizados por outros visitantes.</p>
+            <div class="results-charts">
+                <section class="chart-card"><h3>Votos por candidatura/opção</h3><div id="resultsBars" class="bar-chart"><p class="empty-chart">Carregando resultados…</p></div></section>
+                <section class="chart-card"><h3>Proporção dos votos confirmados</h3><div class="pie-layout"><div id="resultsPie" class="pie-chart" role="img" aria-label="Gráfico de setores dos votos confirmados"></div><div id="resultsLegend" class="pie-legend"></div></div></section>
+            </div>
+            <details><summary>Contagem por versão</summary><table class="vote-table"><thead><tr><th>Versão</th><th>Votos</th></tr></thead><tbody id="versionVoteRows"></tbody></table></details>
+            <details><summary>Detalhamento por candidatura/opção</summary><table class="vote-table"><thead><tr><th>Opção</th><th>Votos</th><th>Percentual</th></tr></thead><tbody id="candidateVoteRows"></tbody></table></details>
+            <p class="small-note">Projeto educativo de demonstração. Os registros online são compartilhados e não são votos oficiais. “Pendentes” ainda não foram confirmados pelo servidor.</p>
         </div>
 
         <div class="info-card" id="realResults" hidden>
