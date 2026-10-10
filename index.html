@@ -387,7 +387,7 @@
                 const candidate = candidates[currentDigits];
                 const label = isBranco ? 'VOTO EM BRANCO' : (candidate ? candidate.name : 'VOTO NULO');
                 const number = isBranco ? 'BRANCO' : currentDigits;
-                screen.innerHTML = \`<div class="review-screen"><div class="screen-header">REVISE SUA ESCOLHA</div><h2>CONFIRMAÇÃO DO VOTO</h2><div class="review-summary"><strong>\${escapeHtml(label)}</strong><span>\${isBranco ? 'Você selecionou voto em branco.' : (candidate ? 'Número ' + escapeHtml(number) + ' · ' + escapeHtml(candidate.party) : 'O número digitado não corresponde a uma candidatura cadastrada.')}</span></div><p style="font-size:12px;text-align:center">Confira antes de registrar. Você ainda pode voltar e corrigir.</p><div class="review-actions"><button type="button" class="review-back" onclick="pressCorrige()">CORRIGIR</button><button type="button" class="review-confirm" onclick="pressConfirma()">CONFIRMAR VOTO</button></div><div class="screen-footer">APERTE <strong>CONFIRMA</strong> PARA CONTINUAR OU <strong>CORRIGE</strong> PARA VOLTAR</div></div>\`;
+                screen.innerHTML = `<div class="review-screen"><div class="screen-header">REVISE SUA ESCOLHA</div><h2>CONFIRMAÇÃO DO VOTO</h2><div class="review-summary"><strong>${escapeHtml(label)}</strong><span>${isBranco ? 'Você selecionou voto em branco.' : (candidate ? 'Número ' + escapeHtml(number) + ' · ' + escapeHtml(candidate.party) : 'O número digitado não corresponde a uma candidatura cadastrada.')}</span></div><p style="font-size:12px;text-align:center">Confira antes de registrar. Você ainda pode voltar e corrigir.</p><div class="review-actions"><button type="button" class="review-back" onclick="pressCorrige()">CORRIGIR</button><button type="button" class="review-confirm" onclick="pressConfirma()">CONFIRMAR VOTO</button></div><div class="screen-footer">APERTE <strong>CONFIRMA</strong> PARA CONTINUAR OU <strong>CORRIGE</strong> PARA VOLTAR</div></div>`;
                 return;
             }
             if (isFim) {
@@ -500,11 +500,11 @@
             document.getElementById('candidateTotal').textContent = total - blank - nulled;
             document.getElementById('pendingTotal').textContent = pendingVotes.length;
             const versions = ['1','2','3','4','4.1','5.0','6.0'];
-            document.getElementById('versionVoteRows').innerHTML = versions.map(v => \`<tr><td>\${v==='6.0'?'Beta 6.0 (em desenvolvimento)':'Beta '+v}</td><td>\${allVotes.filter(x => String(x.version)===v).length}</td></tr>\`).join('') + \`<tr><td>Outras versões</td><td>\${allVotes.filter(x => !versions.includes(String(x.version))).length}</td></tr>\`;
+            document.getElementById('versionVoteRows').innerHTML = versions.map(v => `<tr><td>${v==='6.0'?'Beta 6.0 (em desenvolvimento)':'Beta '+v}</td><td>${allVotes.filter(x => String(x.version)===v).length}</td></tr>`).join('') + `<tr><td>Outras versões</td><td>${allVotes.filter(x => !versions.includes(String(x.version))).length}</td></tr>`;
             const tally = {};
             allVotes.forEach(v => { const label = v.vote_type === 'branco' || v.candidate_number === 'BRANCO' ? 'Voto em branco' : v.vote_type === 'nulo' || v.candidate_number === 'NULO' ? 'Voto nulo' : (v.candidate_name || v.candidate_number || 'Não identificado'); tally[label] = (tally[label] || 0) + 1; });
             const entries = Object.entries(tally).sort((a,b) => b[1]-a[1]);
-            document.getElementById('candidateVoteRows').innerHTML = entries.length ? entries.map(([name,count]) => \`<tr><td>\${escapeHtml(name)}</td><td>\${count}</td><td>\${total ? (count*100/total).toFixed(1).replace('.',',')+'%' : '0%'}</td></tr>\`).join('') : '<tr><td colspan="3">Nenhum voto confirmado ainda.</td></tr>';
+            document.getElementById('candidateVoteRows').innerHTML = entries.length ? entries.map(([name,count]) => `<tr><td>${escapeHtml(name)}</td><td>${count}</td><td>${total ? (count*100/total).toFixed(1).replace('.',',')+'%' : '0%'}</td></tr>`).join('') : '<tr><td colspan="3">Nenhum voto confirmado ainda.</td></tr>';
             renderResultCharts(entries, total);
             updatePendingCount();
         }
@@ -513,11 +513,11 @@
             const bars=document.getElementById('resultsBars'), pie=document.getElementById('resultsPie'), legend=document.getElementById('resultsLegend');
             if(!bars||!pie||!legend)return;
             if(!entries.length||!total){bars.innerHTML='<p class="empty-chart">Ainda não há votos confirmados.</p>';pie.style.background='#334155';legend.innerHTML='<span class="empty-chart">Sem dados para exibir.</span>';return;}
-            bars.innerHTML=entries.map(([name,count],i)=>{const pct=count*100/total;return \`<div class="bar-row"><span class="bar-label" title="\${escapeHtml(name)}">\${escapeHtml(name)}</span><div class="bar-track"><div class="bar-fill" style="width:\${pct}%;background:\${palette[i%palette.length]}"></div></div><span class="bar-value">\${count} · \${pct.toFixed(1).replace('.',',')}%</span></div>\`;}).join('');
+            bars.innerHTML=entries.map(([name,count],i)=>{const pct=count*100/total;return `<div class="bar-row"><span class="bar-label" title="${escapeHtml(name)}">${escapeHtml(name)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${palette[i%palette.length]}"></div></div><span class="bar-value">${count} · ${pct.toFixed(1).replace('.',',')}%</span></div>`;}).join('');
             let offset=0;
             const segments=entries.map(([name,count],i)=>{const start=offset;offset+=count*100/total;return {name,count,pct:count*100/total,color:palette[i%palette.length],start,end:offset};});
-            pie.style.background='conic-gradient('+segments.map(s=>\`\${s.color} \${s.start}% \${s.end}%\`).join(',')+')';
-            legend.innerHTML=segments.map(s=>\`<div class="legend-item"><span class="legend-swatch" style="background:\${s.color}"></span><span>\${escapeHtml(s.name)} — \${s.pct.toFixed(1).replace('.',',')}%</span></div>\`).join('');
+            pie.style.background='conic-gradient('+segments.map(s=>`${s.color} ${s.start}% ${s.end}%`).join(',')+')';
+            legend.innerHTML=segments.map(s=>`<div class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span><span>${escapeHtml(s.name)} — ${s.pct.toFixed(1).replace('.',',')}%</span></div>`).join('');
         }
 
                 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -624,7 +624,7 @@
                 }
             }
             clearInterval(processingMessageTimer); isProcessing=false; isFim=true;
-            document.getElementById('screen').innerHTML=\`<div class="fim-screen">FIM<small>\${escapeHtml(message)}</small><small>Obrigado por participar</small></div>\`;
+            document.getElementById('screen').innerHTML=`<div class="fim-screen">FIM<small>${escapeHtml(message)}</small><small>Obrigado por participar</small></div>`;
             if(message.includes('CONFIRMADO ONLINE'))playUrnaFimSound();
             updatePendingCount(); await renderDashboard();
             setTimeout(()=>{isFim=false;isReview=false;isBranco=false;currentDigits='';voteAlreadyRecorded=false;renderScreen();},3500);
