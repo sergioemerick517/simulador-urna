@@ -58,12 +58,14 @@ O **Simulador da Urna Eletrônica** é um projeto independente criado para explo
 
 > **Sobre a seção “Languages” do GitHub:** parte do CSS e do JavaScript está incorporada ao arquivo `index.html`. Por isso, o indicador automático de linguagens pode destacar principalmente HTML. A tabela acima descreve as tecnologias utilizadas no projeto.
 
-## 🗂️ Versões históricas
+## 🗂️ Versões históricas e downloads
 
-- [**Beta 4.1** — abrir versão histórica](https://sergioemerick517.github.io/simulador-urna/historico/beta-4.1/) <img src="https://img.shields.io/badge/STATUS-OFFLINE-ff6a00?style=for-the-badge" alt="Offline" height="22">
-- [**Beta 5.0** — abrir versão histórica](https://sergioemerick517.github.io/simulador-urna/historico/beta-5.0/) <img src="https://img.shields.io/badge/STATUS-ONLINE-16a34a?style=for-the-badge" alt="Online" height="22">
+**📢 Aviso sobre as Releases:** o download é opcional. A Beta 4.1 e a Beta 5.0 podem ser usadas diretamente pelo navegador nos links abaixo, sem baixar arquivos. Quando os arquivos para download estiverem disponíveis, eles serão publicados na seção [Releases do GitHub](https://github.com/sergioemerick517/simulador-urna/releases).
 
-As versões históricas são mantidas separadas da página principal para não alterar a versão atual do simulador.
+- [**Beta 4.1** — abrir no navegador](https://sergioemerick517.github.io/simulador-urna/historico/beta-4.1/) <img src="https://img.shields.io/badge/STATUS-OFFLINE-ff6a00?style=for-the-badge" alt="Offline" height="22">
+- [**Beta 5.0** — abrir no navegador](https://sergioemerick517.github.io/simulador-urna/historico/beta-5.0/) <img src="https://img.shields.io/badge/STATUS-ONLINE-16a34a?style=for-the-badge" alt="Online" height="22">
+
+O download dos arquivos disponibilizados nas Releases é **opcional**. As versões históricas também continuam acessíveis diretamente pelos links do navegador acima. Cada versão é mantida separada da página principal para preservar a versão atual do simulador.
 
 ## ⚠️ Aviso importante
 
