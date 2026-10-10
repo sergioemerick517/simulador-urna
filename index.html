@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador da Urna Eletrônica — Versão 5.0</title>
+    <title>Simulador da Urna Eletrônica — Beta 5.0</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
         body { background:radial-gradient(ellipse at top,#1d3444 0%,#121824 48%,#0b1120 100%); color:#fff; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:20px; }
@@ -120,7 +120,7 @@
 
     <div class="header-bar">
         <div>
-            <span class="badge-beta">VERSÃO 5.0 · ONLINE</span>
+            <span class="badge-beta">BETA 5.0 · ONLINE</span>
             <strong style="margin-left: 10px;">Simulador da Urna Eletrônica</strong>
         </div>
         <div style="font-size: 12px; color: #94a3b8;">
@@ -178,9 +178,9 @@
 
     <div class="about-modal" id="aboutModal" hidden role="dialog" aria-modal="true" aria-labelledby="aboutTitle" onclick="if(event.target===this) closeAboutModal()">
         <div class="about-dialog">
-            <h2 id="aboutTitle">Sobre o Simulador da Urna · Versão 5.0</h2>
+            <h2 id="aboutTitle">Sobre o Simulador da Urna · Beta 5.0</h2>
             <p>Projeto independente e educativo que reproduz visualmente uma urna eletrônica para demonstrar, de forma interativa, as etapas de uma votação fictícia.</p>
-            <p><strong>Novidade da versão 5.0:</strong> os votos de demonstração são enviados ao Supabase, um banco de dados online compartilhado. O painel de resultados pode atualizar em tempo real entre diferentes navegadores e visitantes.</p>
+            <p><strong>Novidades da Beta 5.0:</strong> os votos de demonstração são enviados ao Supabase, um banco de dados online compartilhado. O painel de resultados pode atualizar em tempo real entre diferentes navegadores e visitantes.</p>
             <p><strong>Este projeto não é oficial do Governo Federal, do TSE ou da Justiça Eleitoral.</strong> Os votos são fictícios, não têm validade eleitoral e não devem ser usados em eleições reais.</p>
             <p>O simulador é independente e gratuito. Os modelos de urna são representações visuais; “UrnaLab 2026” é um conceito fictício criado para este site.</p>
             <button class="modal-close" type="button" onclick="closeAboutModal()">Entendi</button>
@@ -196,7 +196,7 @@
             <details><summary>Beta 3 — versão anterior</summary><ul><li>Sons de teclas, correção, início e confirmação.</li><li>Tela inicial e tela FIM.</li><li>Pontos visuais inspirados no Braille nos botões.</li><li>Painel de contagem, histórico de versões e acesso separado aos resultados oficiais.</li></ul></details>
             <details><summary>Beta 4 — versão anterior</summary><ul><li>Seletor de modelos UE 2022, UE 2020, UE 2015 e UE 2013.</li><li>Variações visuais do gabinete, tela e teclado.</li></ul></details>
             <details><summary>Beta 4.1 — correções, sons e carregamento</summary><ul><li>Sons eletrônicos sintetizados para teclas, correção, voto em branco, início e confirmação.</li><li>Uma única barra verde de processamento, com um entre cinco tempos possíveis escolhido a cada voto.</li><li>Registro demonstrativo após o fim do carregamento.</li><li>Modelo fictício “UrnaLab 2026” e alternativas visuais para fotos indisponíveis.</li></ul></details>
-            <details open><summary>Versão 5.0 — lançamento online</summary><ul><li>Site publicado no GitHub Pages, acessível por um link público.</li><li>Banco de dados Supabase para compartilhar os votos demonstrativos entre visitantes e navegadores.</li><li>Atualização em tempo real do painel quando novos votos são registrados.</li><li>Contagem geral, contagem por versão e resultados por opção.</li><li>Identificação visual da versão 5.0, informações do projeto e descrição das novidades.</li><li>Interface responsiva para telas grandes e celulares, com sons e processamento visual.</li><li>Modelos visuais de urna e aviso explícito de que o projeto não é oficial.</li></ul></details>
+            <details open><summary>Beta 5.0 — lançamento online</summary><ul><li>Site publicado no GitHub Pages, acessível por um link público.</li><li>Banco de dados Supabase para compartilhar os votos demonstrativos entre visitantes e navegadores.</li><li>Atualização em tempo real do painel quando novos votos são registrados.</li><li>Contagem geral, contagem por versão e resultados por opção.</li><li>Identificação visual da Beta 5.0, informações do projeto e descrição das novidades.</li><li>Interface responsiva para telas grandes e celulares, com sons e processamento visual.</li><li>Modelos visuais de urna e aviso explícito de que o projeto não é oficial.</li></ul></details>
         </div>
 
         <div class="info-card" id="voteStats" hidden>
@@ -204,7 +204,7 @@
             <p>Contagem compartilhada online: os votos são lidos do banco de dados Supabase.</p>
             <div class="stats-grid">
                 <div class="stat-box"><span>Votos universais (todas as versões)</span><strong id="universalTotal">0</strong></div>
-                <div class="stat-box"><span>Votos registrados na versão 5.0</span><strong id="beta50Total">0</strong></div>
+                <div class="stat-box"><span>Votos registrados na Beta 5.0</span><strong id="beta50Total">0</strong></div>
                 <div class="stat-box"><span>Votos totais do simulador</span><strong id="allTotal">0</strong></div>
             </div>
             <details open><summary>Contagem por versão (Beta 1, 2, 3, 4, 4.1 e 5.0)</summary><table class="vote-table"><thead><tr><th>Versão</th><th>Votos</th></tr></thead><tbody id="versionVoteRows"></tbody></table></details>
@@ -332,7 +332,7 @@
         function renderScreen() {
             const screen = document.getElementById('screen');
             if (!appStarted) {
-                screen.innerHTML = `<div class="start-screen"><div style="font-size:12px;font-weight:bold;letter-spacing:2px">SIMULADOR DE VOTAÇÃO</div><h2>Bem-vindo à Urna</h2><p>Este é um simulador independente para demonstração. Pressione iniciar para começar a votação de teste.</p><button class="start-btn" onclick="startVoting()">INICIAR VOTAÇÃO</button><small>Versão 5.0 · votos de demonstração online</small></div>`;
+                screen.innerHTML = `<div class="start-screen"><div style="font-size:12px;font-weight:bold;letter-spacing:2px">SIMULADOR DE VOTAÇÃO</div><h2>Bem-vindo à Urna</h2><p>Este é um simulador independente para demonstração. Pressione iniciar para começar a votação de teste.</p><button class="start-btn" onclick="startVoting()">INICIAR VOTAÇÃO</button><small>Beta 5.0 · votos de demonstração online</small></div>`;
                 return;
             }
             if (isProcessing) {
@@ -451,7 +451,7 @@
             document.getElementById('beta50Total').textContent = beta50;
             document.getElementById('allTotal').textContent = total;
             const versions = ['1','2','3','4','4.1','5.0'];
-            const versionRows = versions.map(v => `<tr><td>${v==='5.0'?'Versão 5.0 (atual)':'Beta '+v}</td><td>${allVotes.filter(x => String(x.version)===v).length}</td></tr>`).join('');
+            const versionRows = versions.map(v => `<tr><td>${v==='5.0'?'Beta 5.0 (atual)':'Beta '+v}</td><td>${allVotes.filter(x => String(x.version)===v).length}</td></tr>`).join('');
             document.getElementById('versionVoteRows').innerHTML = versionRows + `<tr><td>Outras versões</td><td>${allVotes.filter(x => !versions.includes(String(x.version))).length}</td></tr>`;
             const tally = {};
             allVotes.forEach(v => { const label = v.candidate_name || v.candidate_number || 'Não identificado'; tally[label] = (tally[label] || 0) + 1; });
@@ -519,7 +519,7 @@
             }
         }
 
-        // Versão 5.0: os votos demonstrativos são registrados no banco online compartilhado.
+        // Beta 5.0: os votos demonstrativos são registrados no banco online compartilhado.
 
         document.addEventListener('keydown', (e) => {
             if (e.key >= '0' && e.key <= '9') pressNumber(e.key);
