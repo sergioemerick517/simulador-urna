@@ -376,7 +376,7 @@
         function renderScreen() {
             const screen = document.getElementById('screen');
             if (!appStarted) {
-                screen.innerHTML = `<div class="start-screen"><div style="font-size:12px;font-weight:bold;letter-spacing:2px">SIMULADOR DE VOTAÇÃO</div><h2>Bem-vindo à Urna</h2><p>Este é um simulador independente para demonstração. Pressione iniciar para começar a votação de teste.</p><button class="start-btn" onclick="startVoting()">INICIAR VOTAÇÃO</button><small>Beta 5.0 · votos de demonstração online</small></div>`;
+                screen.innerHTML = `<div class="start-screen"><div style="font-size:12px;font-weight:bold;letter-spacing:2px">SIMULADOR DE VOTAÇÃO</div><h2>Bem-vindo à Urna</h2><p>Este é um simulador independente para demonstração. Pressione iniciar para começar a votação de teste.</p><button class="start-btn" onclick="startVoting()">INICIAR VOTAÇÃO</button><small>Beta 6.0 · versão em desenvolvimento</small></div>`;
                 return;
             }
             if (isProcessing) {
@@ -525,14 +525,14 @@
         function startVoting() { appStarted = true; currentDigits=''; isBranco=false; isFim=false; isReview=false; playStart(); renderScreen(); }
 
         function pressNumber(num) {
-            if (!appStarted || isFim || isProcessing || isBranco || currentDigits.length >= 2) return;
+            if (!appStarted || isFim || isProcessing || isReview || isBranco || currentDigits.length >= 2) return;
             playKeyTone();
             currentDigits += num;
             renderScreen();
         }
 
         function pressBranco() {
-            if (!appStarted || isFim || isProcessing) return;
+            if (!appStarted || isFim || isProcessing || isReview) return;
             playBlankTone();
             isBranco = true;
             currentDigits = '';
@@ -576,7 +576,9 @@
         async function storeVoteOnline(vote) {
             if(!navigator.onLine)return {confirmed:false,reason:'offline'};
             setConnectionStatus('syncing');
-            const {error}=await supabaseClient.from('urna_votes').insert(vote);
+            let error;
+            try { const response=await supabaseClient.from('urna_votes').insert(vote); error=response.error; }
+            catch(exception) { return {confirmed:false,reason:'network',message:String(exception)}; }
             if(!error)return {confirmed:true};
             if(error.code==='23505') {
                 const {data,error:lookupError}=await supabaseClient.from('urna_votes').select('id').eq('vote_id',vote.vote_id).maybeSingle();
@@ -590,11 +592,12 @@
             if(!pendingVotes.length){setConnectionStatus('online');updatePendingCount();return;}
             setConnectionStatus('syncing');
             const remaining=[];
-            for(const vote of pendingVotes) {
+            for(let i=0;i<pendingVotes.length;i++) {
+                const vote=pendingVotes[i];
                 const result=await storeVoteOnline(vote);
                 if(!result.confirmed) {
                     remaining.push(vote);
-                    if(result.reason==='migration'){console.error('A migração SQL da Beta 6.0 ainda é necessária:',result.message);break;}
+                    if(result.reason==='migration'){remaining.push(...pendingVotes.slice(i+1));console.error('A migração SQL da Beta 6.0 ainda é necessária:',result.message);break;}
                 }
             }
             pendingVotes=remaining; savePendingVotes(); updatePendingCount();
