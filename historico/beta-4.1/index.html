@@ -10,6 +10,7 @@
         
         .header-bar { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; border-radius: 8px; margin-bottom: 25px; }
         .badge-beta { background: #d97706; color: #fff; font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; }
+        .badge-offline { background: #ff6a00; color: #fff; font-weight: 900; font-size: 12px; padding: 5px 10px; border-radius: 5px; text-transform: uppercase; letter-spacing: .8px; box-shadow: 0 0 14px rgba(255,106,0,.42); border: 1px solid #ff9a3d; }
         
         .urna-cabinet { position:relative; background: #e2e8f0; border-radius: 16px; padding: 30px; display: flex; gap: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.8); border: 2px solid #cbd5e1; max-width: 900px; width: 100%; }
         
@@ -119,9 +120,10 @@
 <body>
 
     <div class="header-bar">
-        <div>
+        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
             <span class="badge-beta">BETA 4.1</span>
-            <strong style="margin-left: 10px;">Simulador da Urna Eletrônica</strong>
+            <span class="badge-offline">OFFLINE</span>
+            <strong style="margin-left: 4px;">Simulador da Urna Eletrônica</strong>
         </div>
         <div style="font-size: 12px; color: #94a3b8;">
             Teclas: 0-9 | Backspace | Enter | B (Branco)
