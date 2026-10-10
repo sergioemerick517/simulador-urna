@@ -44,7 +44,7 @@ O **Simulador da Urna Eletrônica** é um projeto independente criado para explo
 
 ## 🚧 Estado da Beta 6.0
 
-A implementação está em andamento na branch `beta-6-development`. Ela não é a versão publicada. Antes de testar o envio online da Beta 6.0, é necessário revisar e aplicar manualmente `database/beta-6-migration-manual.sql` no projeto Supabase. Essa migração **não foi aplicada automaticamente**. Veja `database/TESTES-BETA-6.md` para a lista de verificações.
+A implementação está em andamento na branch `beta-6-development`. Ela não é a versão publicada. A coluna `vote_id` e a restrição contra duplicações já foram adicionadas ao projeto Supabase conectado; o padrão da coluna mantém a compatibilidade com os envios da Beta 5.0. O script `database/beta-6-migration-manual.sql` documenta como reproduzir a mudança em outro ambiente. A interface ainda precisa de teste completo no navegador antes da publicação. Veja `database/TESTES-BETA-6.md` para a lista de verificações.
 
 ## 🧪 Como testar
 
