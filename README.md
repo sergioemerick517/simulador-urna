@@ -60,8 +60,8 @@ O **Simulador da Urna Eletrônica** é um projeto independente criado para explo
 
 ## 🗂️ Versões históricas
 
-- [**Beta 4.1** — abrir versão histórica](https://sergioemerick517.github.io/simulador-urna/historico/beta-4.1/)
-- [**Beta 5.0** — abrir versão histórica](https://sergioemerick517.github.io/simulador-urna/historico/beta-5.0/)
+- [**Beta 4.1** — abrir versão histórica](https://sergioemerick517.github.io/simulador-urna/historico/beta-4.1/) <img src="https://img.shields.io/badge/STATUS-OFFLINE-ff6a00?style=for-the-badge" alt="Offline" height="22">
+- [**Beta 5.0** — abrir versão histórica](https://sergioemerick517.github.io/simulador-urna/historico/beta-5.0/) <img src="https://img.shields.io/badge/STATUS-ONLINE-16a34a?style=for-the-badge" alt="Online" height="22">
 
 As versões históricas são mantidas separadas da página principal para não alterar a versão atual do simulador.
 
