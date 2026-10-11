@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador da Urna Eletrônica — Beta 5.0</title>
+    <title>Simulador da Urna Eletrônica — Beta 6.0 (em desenvolvimento)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
         body { background:radial-gradient(ellipse at top,#1d3444 0%,#121824 48%,#0b1120 100%); color:#fff; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:20px; }
@@ -70,12 +70,9 @@
         .processing-screen { display:flex; flex-direction:column; justify-content:center; gap:14px; height:100%; color:#172016; }
         .processing-title { font-size:18px; font-weight:800; text-align:center; letter-spacing:.5px; }
         .processing-subtitle { font-size:11px; text-align:center; }
-        .progress-list { display:flex; flex-direction:column; gap:9px; margin:5px 0; }
-        .progress-row { display:grid; grid-template-columns:64px 1fr; align-items:center; gap:8px; font-size:10px; font-weight:700; }
-        .progress-track { height:12px; border:1px solid #52634d; border-radius:2px; background:#e0e6d8; overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.18); }
-        .progress-fill { height:100%; width:100%; background:linear-gradient(90deg,#15803d,#22c55e,#4ade80); transform:scaleX(0); transform-origin:left center; animation:vote-load var(--load-duration) linear forwards; }
-        @keyframes vote-load { to { transform:scaleX(1); } }
-        @media (prefers-reduced-motion: reduce) { .progress-fill { animation-duration:1.2s !important; } }
+        .progress-track { height:12px; border:1px solid #52634d; border-radius:8px; background:#e0e6d8; overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.18); }
+        .progress-fill { height:100%; width:0; border-radius:8px; background:linear-gradient(90deg,#15803d,#22c55e,#4ade80); transition:width 35ms linear; }
+        @media(prefers-reduced-motion:reduce) { .progress-fill { transition:none; } }
         .fim-screen small { font-size: 14px; letter-spacing: 0; font-weight: 600; }
         .start-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; height:100%; }
         .start-screen h2 { font-size:24px; }
@@ -113,24 +110,53 @@
         .vote-table th { color:#94a3b8; }
         .official-link { display:inline-block; margin-top:10px; background:#e2e8f0; color:#0f172a; padding:10px 14px; border-radius:7px; font-weight:700; font-size:13px; text-decoration:none; }
         .small-note { color:#fbbf24!important; font-size:12px!important; margin-top:8px; }
-        @media(max-width:720px) { .top-menu { display:grid; grid-template-columns:1fr 1fr; } .top-menu button { width:100%; } .model-selector { grid-column:1 / -1; margin-left:0; padding:4px 0; flex-wrap:wrap; } .model-selector select { max-width:100%; width:100%; } .urna-cabinet { flex-direction:column; padding:42px 16px 16px; gap:16px; } .model-plaque { top:8px; right:8px; max-width:calc(100% - 16px); overflow:hidden; text-overflow:ellipsis; } .screen-container { flex:auto; height:360px; } .secondary-controls { grid-template-columns:1fr; } .header-bar { gap:10px; align-items:flex-start; flex-direction:column; } .stats-grid {grid-template-columns:1fr;} .vote-table {font-size:11px;} }
+        .connection-status { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:800; color:#86efac; }
+        .connection-status[data-state="offline"] { color:#fca5a5; }
+        .connection-status[data-state="syncing"] { color:#fde68a; }
+        .connection-status[data-state="error"] { color:#fdba74; }
+        .review-screen { display:flex; flex-direction:column; justify-content:center; gap:14px; min-height:100%; color:#111827; }
+        .review-screen h2 { font-size:20px; text-align:center; }
+        .review-summary { padding:14px; border:1px solid #64748b; background:rgba(255,255,255,.35); border-radius:8px; text-align:center; }
+        .review-summary strong { display:block; font-size:18px; margin-bottom:6px; }
+        .review-actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+        .review-actions button { border:0; border-radius:5px; padding:11px 14px; font-weight:800; cursor:pointer; }
+        .review-back { background:#ea580c; color:white; }
+        .review-confirm { background:#15803d; color:white; }
+        .processing-message { font-size:12px; font-weight:700; text-align:center; min-height:18px; }
+        .results-charts { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+        .chart-card { min-width:0; padding:14px; background:rgba(15,23,42,.7); border:1px solid rgba(255,255,255,.12); border-radius:10px; }
+        .chart-card h3 { font-size:13px; margin-bottom:12px; }
+        .bar-chart { display:flex; flex-direction:column; gap:10px; }
+        .bar-row { display:grid; grid-template-columns:minmax(75px,1fr) 2fr auto; gap:8px; align-items:center; font-size:11px; }
+        .bar-label { overflow-wrap:anywhere; color:#e2e8f0; }
+        .bar-track { height:10px; background:#334155; border-radius:8px; overflow:hidden; }
+        .bar-fill { height:100%; border-radius:8px; }
+        .bar-value { color:#cbd5e1; font-variant-numeric:tabular-nums; }
+        .pie-layout { display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; }
+        .pie-chart { width:140px; height:140px; border-radius:50%; background:#334155; flex:0 0 auto; }
+        .pie-legend { display:flex; flex-direction:column; gap:7px; font-size:11px; min-width:100px; }
+        .legend-item { display:flex; align-items:center; gap:7px; }
+        .legend-swatch { width:10px; height:10px; border-radius:3px; flex:0 0 auto; }
+        .empty-chart { color:#94a3b8; font-size:12px; }
+
+        @media(max-width:720px) { .results-charts { grid-template-columns:1fr; } .bar-row { grid-template-columns:minmax(80px,1fr) 1.4fr auto; } .top-menu { display:grid; grid-template-columns:1fr 1fr; } .top-menu button { width:100%; } .model-selector { grid-column:1 / -1; margin-left:0; padding:4px 0; flex-wrap:wrap; } .model-selector select { max-width:100%; width:100%; } .urna-cabinet { flex-direction:column; padding:42px 16px 16px; gap:16px; } .model-plaque { top:8px; right:8px; max-width:calc(100% - 16px); overflow:hidden; text-overflow:ellipsis; } .screen-container { flex:auto; height:360px; } .secondary-controls { grid-template-columns:1fr; } .header-bar { gap:10px; align-items:flex-start; flex-direction:column; } .stats-grid {grid-template-columns:1fr;} .vote-table {font-size:11px;} }
     </style>
 </head>
 <body>
 
     <div class="header-bar">
         <div>
-            <span class="badge-beta">BETA 5.0 · ONLINE</span>
+            <span class="badge-beta">BETA 6.0 · EM DESENVOLVIMENTO</span>
             <strong style="margin-left: 10px;">Simulador da Urna Eletrônica</strong>
         </div>
         <div style="font-size: 12px; color: #94a3b8;">
-            Teclas: 0-9 | Backspace | Enter | B (Branco)
+            <span class="connection-status" id="connectionStatus" role="status" aria-live="polite">● Verificando conexão</span><br>Teclas: 0-9 | Backspace | Enter | B (Branco)
         </div>
     </div>
 
     <nav class="top-menu" aria-label="Menu do simulador">
         <button type="button" aria-controls="updatesPanel" aria-expanded="false" onclick="toggleInfoPanel('updatesPanel', this)">📋 Atualizações</button>
-        <button type="button" aria-controls="voteStats" aria-expanded="false" onclick="toggleInfoPanel('voteStats', this)">📊 Votos do simulador</button>
+        <button type="button" aria-controls="voteStats" aria-expanded="false" onclick="toggleInfoPanel('voteStats', this)">📈 Resultados detalhados</button>
         <button type="button" aria-controls="realResults" aria-expanded="false" onclick="toggleInfoPanel('realResults', this)">🏛️ Eleições reais</button>
         <button type="button" onclick="openAboutModal()">ℹ️ Sobre o site</button>
         <div class="model-selector">
@@ -178,9 +204,9 @@
 
     <div class="about-modal" id="aboutModal" hidden role="dialog" aria-modal="true" aria-labelledby="aboutTitle" onclick="if(event.target===this) closeAboutModal()">
         <div class="about-dialog">
-            <h2 id="aboutTitle">Sobre o Simulador da Urna · Beta 5.0</h2>
+            <h2 id="aboutTitle">Sobre o Simulador da Urna · Beta 6.0</h2>
             <p>Projeto independente e educativo que reproduz visualmente uma urna eletrônica para demonstrar, de forma interativa, as etapas de uma votação fictícia.</p>
-            <p><strong>Novidades da Beta 5.0:</strong> os votos de demonstração são enviados ao Supabase, um banco de dados online compartilhado. O painel de resultados pode atualizar em tempo real entre diferentes navegadores e visitantes.</p>
+            <p><strong>Novidades em desenvolvimento para a Beta 6.0:</strong> revisão antes da confirmação, resultados com gráficos, fila offline e proteção contra registros duplicados. O envio online exige a migração de banco documentada nesta branch.</p>
             <p><strong>Este projeto não é oficial do Governo Federal, do TSE ou da Justiça Eleitoral.</strong> Os votos são fictícios, não têm validade eleitoral e não devem ser usados em eleições reais.</p>
             <p>O simulador é independente e gratuito. Os modelos de urna são representações visuais; “UrnaLab 2026” é um conceito fictício criado para este site.</p>
             <button class="modal-close" type="button" onclick="closeAboutModal()">Entendi</button>
@@ -197,19 +223,27 @@
             <details><summary>Beta 4 — versão anterior</summary><ul><li>Seletor de modelos UE 2022, UE 2020, UE 2015 e UE 2013.</li><li>Variações visuais do gabinete, tela e teclado.</li></ul></details>
             <details><summary>Beta 4.1 — correções, sons e carregamento</summary><ul><li>Sons eletrônicos sintetizados para teclas, correção, voto em branco, início e confirmação.</li><li>Uma única barra verde de processamento, com um entre cinco tempos possíveis escolhido a cada voto.</li><li>Registro demonstrativo após o fim do carregamento.</li><li>Modelo fictício “UrnaLab 2026” e alternativas visuais para fotos indisponíveis.</li></ul></details>
             <details open><summary>Beta 5.0 — lançamento online</summary><ul><li>Site publicado no GitHub Pages, acessível por um link público.</li><li>Banco de dados Supabase para compartilhar os votos demonstrativos entre visitantes e navegadores.</li><li>Atualização em tempo real do painel quando novos votos são registrados.</li><li>Contagem geral, contagem por versão e resultados por opção.</li><li>Identificação visual da Beta 5.0, informações do projeto e descrição das novidades.</li><li>Interface responsiva para telas grandes e celulares, com sons e processamento visual.</li><li>Modelos visuais de urna e aviso explícito de que o projeto não é oficial.</li></ul></details>
+            <details><summary>Beta 6.0 — última versão Beta (em desenvolvimento)</summary><ul><li>Revisão da escolha antes de confirmar o registro.</li><li>Barra única animada com mensagens de processamento e status da conexão.</li><li>Painel dedicado com gráficos de barras e setores, percentuais e totais detalhados.</li><li>Fila local de registros pendentes e tentativa de sincronização ao recuperar a conexão.</li><li>Identificador único persistente e restrição única no banco para reduzir duplicações em reenvios.</li><li>Esta versão ainda não foi publicada; a Beta 5.0 continua sendo a versão pública.</li></ul></details>
         </div>
 
         <div class="info-card" id="voteStats" hidden>
-            <h2>📊 Votos do simulador</h2>
-            <p>Contagem compartilhada online: os votos são lidos do banco de dados Supabase.</p>
+            <h2>📈 Resultados detalhados</h2>
+            <p>O painel mostra somente votos confirmados no banco compartilhado. Registros guardados neste navegador aparecem separadamente como pendentes.</p>
             <div class="stats-grid">
-                <div class="stat-box"><span>Votos universais (todas as versões)</span><strong id="universalTotal">0</strong></div>
-                <div class="stat-box"><span>Votos registrados na Beta 5.0</span><strong id="beta50Total">0</strong></div>
-                <div class="stat-box"><span>Votos totais do simulador</span><strong id="allTotal">0</strong></div>
+                <div class="stat-box"><span>Total de votos confirmados online</span><strong id="allTotal">0</strong></div>
+                <div class="stat-box"><span>Votos registrados na Beta 6.0</span><strong id="beta60Total">0</strong></div>
+                <div class="stat-box"><span>Votos em branco</span><strong id="blankTotal">0</strong></div>
+                <div class="stat-box"><span>Votos nulos</span><strong id="nullTotal">0</strong></div>
+                <div class="stat-box"><span>Votos para candidaturas</span><strong id="candidateTotal">0</strong></div>
+                <div class="stat-box"><span>Pendentes neste navegador</span><strong id="pendingTotal">0</strong></div>
             </div>
-            <details open><summary>Contagem por versão (Beta 1, 2, 3, 4, 4.1 e 5.0)</summary><table class="vote-table"><thead><tr><th>Versão</th><th>Votos</th></tr></thead><tbody id="versionVoteRows"></tbody></table></details>
-            <details><summary>Votos por opção</summary><table class="vote-table"><thead><tr><th>Opção</th><th>Votos</th></tr></thead><tbody id="candidateVoteRows"></tbody></table></details>
-            <p class="small-note">Este é um simulador educativo de demonstração, não uma votação oficial. Os votos enviados online podem ser visualizados por outros visitantes.</p>
+            <div class="results-charts">
+                <section class="chart-card"><h3>Votos por candidatura/opção</h3><div id="resultsBars" class="bar-chart"><p class="empty-chart">Carregando resultados…</p></div></section>
+                <section class="chart-card"><h3>Proporção dos votos confirmados</h3><div class="pie-layout"><div id="resultsPie" class="pie-chart" role="img" aria-label="Gráfico de setores dos votos confirmados"></div><div id="resultsLegend" class="pie-legend"></div></div></section>
+            </div>
+            <details><summary>Contagem por versão</summary><table class="vote-table"><thead><tr><th>Versão</th><th>Votos</th></tr></thead><tbody id="versionVoteRows"></tbody></table></details>
+            <details><summary>Detalhamento por candidatura/opção</summary><table class="vote-table"><thead><tr><th>Opção</th><th>Votos</th><th>Percentual</th></tr></thead><tbody id="candidateVoteRows"></tbody></table></details>
+            <p class="small-note">Projeto educativo de demonstração. Os registros online são compartilhados e não são votos oficiais. “Pendentes” ainda não foram confirmados pelo servidor.</p>
         </div>
 
         <div class="info-card" id="realResults" hidden>
@@ -225,11 +259,11 @@
         // Conexão pública do projeto Supabase. A segurança dos dados é aplicada por RLS no banco.
         const SUPABASE_URL = 'https://qfsagbhcrixipxajggdl.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_Y85l8Da_cJD6EiJeFueiJg_Fh-jLGy4';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        const BETA_VERSION = '5.0';
+        const supabaseClient = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+        const BETA_VERSION = '6.0';
         // Fotos e candidaturas exibidas para fins demonstrativos. As fotos abaixo são do portal oficial do TSE.
         const candidates = {
-            '13': { name: 'LUIZ INÁCIO LULA DA SILVA', party: 'PT', vice: 'Geraldo Alckmin', photo: 'https://www.tse.jus.br/imagens/imagens/lula/@@images/image-200-93d51d895f8ebc8900bf3e02c7052bef.png' },
+            '13': { name: 'LUIZ INÁCIO LULA DA SILVA', party: 'PT', vice: 'Geraldo Alckmin', photo: 'https://www.tse.jus.br/imagens/imagens/lula/%40%40images/image-200-93d51d895f8ebc8900bf3e02c7052bef.png' },
             '22': { name: 'FLÁVIO BOLSONARO', party: 'PL', vice: 'Alfredo Gaspar', photo: 'https://www.tse.jus.br/imagens/imagens/flavio-bolsonaro/%40%40images/image-200-7092d276831e3453f70c59d07d5c9ae7.png' },
             '55': { name: 'RONALDO CAIADO', party: 'PSD', vice: 'Gilberto Kassab', photo: 'https://www.tse.jus.br/imagens/imagens/caiado-1/%40%40images/image-200-909d3f1cbd7921f6cd0b406fb5da9eb9.png' },
             '29': { name: 'RUI COSTA PIMENTA', party: 'PCO', vice: 'Antônio Carlos', photo: 'https://www.tse.jus.br/imagens/imagens/foto-rui-costa' },
@@ -243,6 +277,26 @@
             '28': { name: 'LEONARDO AVALANCHE', party: 'PRTB', vice: 'Consulte a fonte oficial', photo: 'https://www.tse.jus.br/imagens/imagens/leonardo-avalanche/%40%40images/image-200-bad5d51d4e4727e5a46cbd8d7bf079ed.jpeg' },
             '70': { name: 'AUGUSTO CURY', party: 'AVANTE', vice: 'Júlio Delgado', photo: 'https://www.tse.jus.br/imagens/imagens/escritor-augusto-cury/%40%40images/image-200-a49a0ad458e00ae031cca0a564cfe26f.png' }
         };
+
+        // Cores dos partidos conforme as referências visuais enviadas pelo usuário.
+        const partyColors = {
+            'AVANTE': '#19c6e6',
+            'MISSÃO': '#e5c400',
+            'PSD': '#65b52e',
+            'NOVO': '#ff6b1a',
+            'UP': '#a3a3a3',
+            'PSTU': '#f05b67',
+            'DC': '#8b5cf6',
+            'PCB': '#e5484d',
+            'DEMOCRATA': '#36b37e',
+            'PCO': '#f05252',
+            'PL': '#2474d8',
+            'PT': '#ef3340',
+            'PRTB': '#64748b'
+        };
+        function partyColor(party) {
+            return partyColors[String(party || '').toUpperCase()] || '#94a3b8';
+        }
 
         const urnaModels = {
             '2026': { label:'URNALAB 2026 · CONCEITO FICTÍCIO', plaque:'URNALAB · CONCEITO 2026 · FICTÍCIO', brand:'URNALAB · PROJETO CONCEITUAL', description:'UrnaLab 2026 · conceito visual fictício criado exclusivamente para este site. Não é um modelo real, não é oficial e não representa equipamento do TSE.' },
@@ -266,10 +320,18 @@
         let isBranco = false;
         let isFim = false;
         let isProcessing = false;
+        let isReview = false;
+        let processingMessageTimer = null;
+        let dashboardVotes = [];
+        const PENDING_STORAGE_KEY = 'urnaBeta6PendingVotes';
+        let pendingVotes = readPendingVotes();
         let processingTimer = null;
+        let progressAnimationTimer = null;
+        let processingDuration = 2600;
         let appStarted = false;
         let voteAlreadyRecorded = false;
-        let localVotes = JSON.parse(localStorage.getItem('urnaVotesShared') || '[]');
+        let localVotes = [];
+        try { const storedLocalVotes = JSON.parse(localStorage.getItem('urnaVotesShared') || '[]'); localVotes = Array.isArray(storedLocalVotes) ? storedLocalVotes : []; } catch (_) { localVotes = []; }
 
         let audioCtx;
         // Trechos de áudio enviados pelo criador do projeto, incorporados no próprio HTML.
@@ -332,11 +394,18 @@
         function renderScreen() {
             const screen = document.getElementById('screen');
             if (!appStarted) {
-                screen.innerHTML = `<div class="start-screen"><div style="font-size:12px;font-weight:bold;letter-spacing:2px">SIMULADOR DE VOTAÇÃO</div><h2>Bem-vindo à Urna</h2><p>Este é um simulador independente para demonstração. Pressione iniciar para começar a votação de teste.</p><button class="start-btn" onclick="startVoting()">INICIAR VOTAÇÃO</button><small>Beta 5.0 · votos de demonstração online</small></div>`;
+                screen.innerHTML = `<div class="start-screen"><div style="font-size:12px;font-weight:bold;letter-spacing:2px">SIMULADOR DE VOTAÇÃO</div><h2>Bem-vindo à Urna</h2><p>Este é um simulador independente para demonstração. Pressione iniciar para começar a votação de teste.</p><button class="start-btn" onclick="startVoting()">INICIAR VOTAÇÃO</button><small>Beta 6.0 · versão em desenvolvimento</small></div>`;
                 return;
             }
             if (isProcessing) {
-                screen.innerHTML = `<div class="processing-screen"><div class="processing-title">REGISTRANDO SEU VOTO</div><div class="processing-subtitle">Aguarde enquanto a demonstração processa a confirmação.</div><div class="progress-list" aria-label="Barra de carregamento do voto"><div class="progress-track"><div class="progress-fill" style="--load-duration:${window.voteLoadDuration || 2.6}s"></div></div></div><div class="processing-subtitle">Não feche esta tela.</div></div>`;
+                screen.innerHTML = `<div class="processing-screen"><div class="processing-title">PROCESSANDO O VOTO</div><div class="processing-subtitle">Aguarde enquanto tentamos registrar sua escolha.</div><div class="progress-track" role="progressbar" aria-label="Processamento do voto" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill" id="voteProgressFill" style="width:0%"></div></div><div class="processing-message" id="processingMessage" aria-live="polite">Preparando registro…</div><div class="processing-subtitle">A confirmação depende da resposta do servidor.</div></div>`;
+                return;
+            }
+            if (isReview) {
+                const candidate = candidates[currentDigits];
+                const label = isBranco ? 'VOTO EM BRANCO' : (candidate ? candidate.name : 'VOTO NULO');
+                const number = isBranco ? 'BRANCO' : currentDigits;
+                screen.innerHTML = `<div class="review-screen"><div class="screen-header">REVISE SUA ESCOLHA</div><h2>CONFIRMAÇÃO DO VOTO</h2><div class="review-summary"><strong>${escapeHtml(label)}</strong><span>${isBranco ? 'Você selecionou voto em branco.' : (candidate ? 'Número ' + escapeHtml(number) + ' · <span style="color:' + partyColor(candidate.party) + ';font-weight:800">' + escapeHtml(candidate.party) + '</span>' : 'O número digitado não corresponde a uma candidatura cadastrada.')}</span></div><p style="font-size:12px;text-align:center">Confira antes de registrar. Você ainda pode voltar e corrigir.</p><div class="review-actions"><button type="button" class="review-back" onclick="pressCorrige()">CORRIGIR</button><button type="button" class="review-confirm" onclick="pressConfirma()">CONFIRMAR VOTO</button></div><div class="screen-footer">APERTE <strong>CONFIRMA</strong> PARA CONTINUAR OU <strong>CORRIGE</strong> PARA VOLTAR</div></div>`;
                 return;
             }
             if (isFim) {
@@ -387,8 +456,8 @@
                             </div>
                             ${candidate ? `
                                 <div style="margin-top: 15px; font-size: 13px;">
-                                    Nome: <strong>${candidate.name}</strong><br>
-                                    Partido: <strong>${candidate.party}</strong><br>
+                                    Nome: <strong style="color:${partyColor(candidate.party)}">${candidate.name}</strong><br>
+                                    Partido: <strong style="color:${partyColor(candidate.party)}">${candidate.party}</strong><br>
                                     Vice: <strong>${candidate.vice}</strong>
                                 </div>
                             ` : (currentDigits.length === 2 ? `<div style="margin-top: 15px; font-weight: bold;">VOTO NULO</div>` : '')}
@@ -436,42 +505,68 @@
         }
 
         async function renderDashboard() {
-            const { data: votes, error } = await supabaseClient
-                .from('urna_votes')
-                .select('candidate_number,candidate_name,vote_type,version,created_at')
-                .order('created_at', { ascending: true });
-            if (error) {
-                console.error('Não foi possível carregar os votos online:', error.message);
+            if (!supabaseClient) { setConnectionStatus('offline'); updatePendingCount(); const bars=document.getElementById('resultsBars'); if(bars)bars.innerHTML='<p class="empty-chart">Biblioteca online indisponível. Os votos não foram confirmados no servidor.</p>'; return; }
+            let response;
+            try {
+                response = await supabaseClient.from('urna_votes').select('candidate_number,candidate_name,vote_type,version,created_at').order('created_at', { ascending: true });
+            } catch (exception) {
+                console.error('Falha de rede ao carregar os votos online:', exception);
+                setConnectionStatus(navigator.onLine ? 'error' : 'offline');
                 return;
             }
-            const allVotes = votes || [];
-            const total = allVotes.length;
-            const beta50 = allVotes.filter(v => String(v.version) === '5.0').length;
-            document.getElementById('universalTotal').textContent = total;
-            document.getElementById('beta50Total').textContent = beta50;
+            const { data: votes, error } = response;
+            if (error) { console.error('Não foi possível carregar os votos online:', error.message); setConnectionStatus(navigator.onLine ? 'error' : 'offline'); return; }
+            dashboardVotes = votes || [];
+            const allVotes = dashboardVotes, total = allVotes.length;
+            const blank = allVotes.filter(v => v.vote_type === 'branco' || v.candidate_number === 'BRANCO').length;
+            const nulled = allVotes.filter(v => v.vote_type === 'nulo' || v.candidate_number === 'NULO').length;
             document.getElementById('allTotal').textContent = total;
-            const versions = ['1','2','3','4','4.1','5.0'];
-            const versionRows = versions.map(v => `<tr><td>${v==='5.0'?'Beta 5.0 (atual)':'Beta '+v}</td><td>${allVotes.filter(x => String(x.version)===v).length}</td></tr>`).join('');
-            document.getElementById('versionVoteRows').innerHTML = versionRows + `<tr><td>Outras versões</td><td>${allVotes.filter(x => !versions.includes(String(x.version))).length}</td></tr>`;
+            document.getElementById('beta60Total').textContent = allVotes.filter(v => String(v.version) === '6.0').length;
+            document.getElementById('blankTotal').textContent = blank;
+            document.getElementById('nullTotal').textContent = nulled;
+            document.getElementById('candidateTotal').textContent = total - blank - nulled;
+            document.getElementById('pendingTotal').textContent = pendingVotes.length;
+            const versions = ['1','2','3','4','4.1','5.0','6.0'];
+            document.getElementById('versionVoteRows').innerHTML = versions.map(v => `<tr><td>${v==='6.0'?'Beta 6.0 (em desenvolvimento)':'Beta '+v}</td><td>${allVotes.filter(x => String(x.version)===v).length}</td></tr>`).join('') + `<tr><td>Outras versões</td><td>${allVotes.filter(x => !versions.includes(String(x.version))).length}</td></tr>`;
             const tally = {};
-            allVotes.forEach(v => { const label = v.candidate_name || v.candidate_number || 'Não identificado'; tally[label] = (tally[label] || 0) + 1; });
+            allVotes.forEach(v => { const label = v.vote_type === 'branco' || v.candidate_number === 'BRANCO' ? 'Voto em branco' : v.vote_type === 'nulo' || v.candidate_number === 'NULO' ? 'Voto nulo' : (v.candidate_name || v.candidate_number || 'Não identificado'); tally[label] = (tally[label] || 0) + 1; });
             const entries = Object.entries(tally).sort((a,b) => b[1]-a[1]);
-            document.getElementById('candidateVoteRows').innerHTML = entries.length ? entries.map(([name,count]) => `<tr><td>${escapeHtml(name)}</td><td>${count}</td></tr>`).join('') : '<tr><td colspan="2">Nenhum voto registrado ainda.</td></tr>';
+            document.getElementById('candidateVoteRows').innerHTML = entries.length ? entries.map(([name,count]) => `<tr><td><span style="color:${resultColor(name)};font-weight:700">${escapeHtml(name)}</span></td><td>${count}</td><td>${total ? (count*100/total).toFixed(1).replace('.',',')+'%' : '0%'}</td></tr>`).join('') : '<tr><td colspan="3">Nenhum voto confirmado ainda.</td></tr>';
+            renderResultCharts(entries, total);
+            updatePendingCount();
+        }
+        function resultColor(name) {
+            const label = String(name || '').trim().toLocaleUpperCase('pt-BR');
+            if (label.includes('BRANCO')) return '#f8fafc';
+            if (label.includes('NULO')) return '#64748b';
+            const candidate = Object.values(candidates).find(item => label === item.name.toLocaleUpperCase('pt-BR') || label === item.party.toLocaleUpperCase('pt-BR') || label.includes(item.name.toLocaleUpperCase('pt-BR')));
+            return candidate ? partyColor(candidate.party) : '#94a3b8';
         }
 
-        function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        function renderResultCharts(entries,total) {
+            const bars=document.getElementById('resultsBars'), pie=document.getElementById('resultsPie'), legend=document.getElementById('resultsLegend');
+            if(!bars||!pie||!legend)return;
+            if(!entries.length||!total){bars.innerHTML='<p class="empty-chart">Ainda não há votos confirmados.</p>';pie.style.background='#334155';legend.innerHTML='<span class="empty-chart">Sem dados para exibir.</span>';return;}
+            bars.innerHTML=entries.map(([name,count])=>{const pct=count*100/total,color=resultColor(name);return '<div class="bar-row"><span class="bar-label" title="'+escapeHtml(name)+'">'+escapeHtml(name)+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div><span class="bar-value">'+count+' · '+pct.toFixed(1).replace('.',',')+'%</span></div>';}).join('');
+            let offset=0;
+            const segments=entries.map(([name,count])=>{const start=offset;offset+=count*100/total;return {name,count,pct:count*100/total,color:resultColor(name),start,end:offset};});
+            pie.style.background='conic-gradient('+segments.map(s=>s.color+' '+s.start+'% '+s.end+'%').join(',')+')';
+            legend.innerHTML=segments.map(s=>'<div class="legend-item"><span class="legend-swatch" style="background:'+s.color+'"></span><span>'+escapeHtml(s.name)+' — '+s.pct.toFixed(1).replace('.',',')+'%</span></div>').join('');
+        }
 
-        function startVoting() { appStarted = true; currentDigits=''; isBranco=false; isFim=false; playStart(); renderScreen(); }
+                function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        function startVoting() { appStarted = true; currentDigits=''; isBranco=false; isFim=false; isReview=false; playStart(); renderScreen(); }
 
         function pressNumber(num) {
-            if (!appStarted || isFim || isProcessing || isBranco || currentDigits.length >= 2) return;
+            if (!appStarted || isFim || isProcessing || isReview || isBranco || currentDigits.length >= 2) return;
             playKeyTone();
             currentDigits += num;
             renderScreen();
         }
 
         function pressBranco() {
-            if (!appStarted || isFim || isProcessing) return;
+            if (!appStarted || isFim || isProcessing || isReview) return;
             playBlankTone();
             isBranco = true;
             currentDigits = '';
@@ -481,78 +576,214 @@
         function pressCorrige() {
             if (!appStarted || isFim || isProcessing) return;
             playCorrection();
+            isReview = false;
             isBranco = false;
             currentDigits = '';
             renderScreen();
         }
 
-        async function pressConfirma() {
-            if (!appStarted || isFim || isProcessing) return;
-            if (currentDigits.length === 2 || isBranco) {
-                isProcessing = true;
-                playUrnaVoteSound(); // som "PIÉ" ao confirmar o voto
-                // A barra única usa um entre cinco tempos possíveis a cada confirmação.
-                const possibleDurations = [850, 1500, 2600, 4100, 5600];
-                const duration = possibleDurations[Math.floor(Math.random() * possibleDurations.length)] * (0.9 + Math.random() * 0.2);
-                window.voteLoadDuration = (duration / 1000).toFixed(2);
-                renderScreen();
-                processingTimer = setTimeout(async () => {
-                    const candidate = candidates[currentDigits];
-                    const vote = {
-                        candidate_number: isBranco ? 'BRANCO' : (candidate ? currentDigits : 'NULO'),
-                        candidate_name: isBranco ? 'Voto em branco' : (candidate ? candidate.name : 'Voto nulo'),
-                        vote_type: isBranco ? 'branco' : (candidate ? 'candidato' : 'nulo'),
-                        version: BETA_VERSION
-                    };
-                    try {
-                        const { error } = await supabaseClient.from('urna_votes').insert(vote);
-                        if (error) throw error;
-                    } catch (error) {
-                        console.error('Falha ao registrar voto online:', error?.message || error);
-                        isProcessing = false;
-                        isFim = false;
-                        renderScreen();
-                        alert('O voto não foi registrado. Verifique a conexão e as permissões do Supabase e tente novamente.');
-                        return;
-                    }
-
-                    // A gravação foi confirmada. Falhas ao atualizar o painel não invalidam o voto já salvo.
-                    isProcessing = false;
-                    isFim = true;
-                    playUrnaFimSound();
-                    renderScreen();
-                    renderDashboard().catch(error => console.error('Falha ao atualizar o painel de votos:', error));
-                    setTimeout(() => {
-                        isFim = false;
-                        isBranco = false;
-                        currentDigits = '';
-                        renderScreen();
-                    }, 3000);
-                }, duration + 150);
+        function readPendingVotes() {
+            try { const value=JSON.parse(localStorage.getItem(PENDING_STORAGE_KEY)||'[]'); return Array.isArray(value)?value:[]; }
+            catch(error) { return []; }
+        }
+        function savePendingVotes() {
+            try { localStorage.setItem(PENDING_STORAGE_KEY,JSON.stringify(pendingVotes)); return true; }
+            catch(error) { console.error('Não foi possível guardar a fila offline:',error); return false; }
+        }
+        function createVoteId() {
+            if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();
+            return 'vote-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)+'-'+Math.random().toString(36).slice(2);
+        }
+        function setConnectionStatus(state) {
+            const el=document.getElementById('connectionStatus'); if(!el)return;
+            const labels={online:'● Online',offline:'● Offline',syncing:'● Sincronizando',error:'● Verificar conexão'};
+            el.dataset.state=state; el.textContent=labels[state]||labels.error;
+        }
+        function updatePendingCount() {
+            const el=document.getElementById('pendingTotal'); if(el)el.textContent=pendingVotes.length;
+        }
+        function startProgressBar() {
+            clearInterval(progressAnimationTimer);
+            const track=document.querySelector('.progress-track');
+            const fill=document.getElementById('voteProgressFill');
+            if(!track||!fill)return;
+            const startedAt=performance.now();
+            const update=()=>{
+                const elapsed=performance.now()-startedAt;
+                const percent=Math.min(100,Math.round((elapsed/processingDuration)*100));
+                fill.style.width=percent+'%';
+                track.setAttribute('aria-valuenow',String(percent));
+                if(percent>=100){clearInterval(progressAnimationTimer);progressAnimationTimer=null;}
+            };
+            fill.style.width='0%'; track.setAttribute('aria-valuenow','0'); update();
+            progressAnimationTimer=setInterval(update,35);
+        }
+        function startProcessingMessages() {
+            const messages=['Preparando registro…','Enviando ao servidor…','Aguardando confirmação…','Verificando resposta…'];
+            let index=0; clearInterval(processingMessageTimer);
+            processingMessageTimer=setInterval(()=>{index=(index+1)%messages.length;const el=document.getElementById('processingMessage');if(el)el.textContent=messages[index];},900);
+        }
+        async function storeVoteOnline(vote) {
+            if(!navigator.onLine)return {confirmed:false,reason:'offline'};
+            if(!supabaseClient)return {confirmed:false,reason:'network',message:'A biblioteca de conexão não foi carregada.'};
+            setConnectionStatus('syncing');
+            let error;
+            try { const response=await supabaseClient.from('urna_votes').insert(vote); error=response.error; }
+            catch(exception) { return {confirmed:false,reason:'network',message:String(exception)}; }
+            if(!error)return {confirmed:true};
+            if(error.code==='23505') {
+                try {
+                    const {data,error:lookupError}=await supabaseClient.from('urna_votes').select('id').eq('vote_id',vote.vote_id).maybeSingle();
+                    if(!lookupError&&data)return {confirmed:true,duplicate:true};
+                    return {confirmed:false,reason:'network',message:lookupError?.message || 'Não foi possível verificar se o voto já foi salvo.'};
+                } catch(exception) {
+                    return {confirmed:false,reason:'network',message:String(exception)};
+                }
             }
+            if(['PGRST204','42703','PGRST200'].includes(error.code)||/vote_id|schema cache|column/i.test(error.message||''))return {confirmed:false,reason:'migration',message:error.message};
+            return {confirmed:false,reason:'network',message:error.message};
+        }
+        let isSyncingPendingVotes = false;
+        async function syncPendingVotes() {
+            if(isSyncingPendingVotes)return;
+            if(!navigator.onLine){setConnectionStatus('offline');updatePendingCount();return;}
+            if(!pendingVotes.length){setConnectionStatus('online');updatePendingCount();return;}
+            isSyncingPendingVotes=true;
+            setConnectionStatus('syncing');
+            try {
+                const remaining=[];
+                for(let i=0;i<pendingVotes.length;i++) {
+                    const vote=pendingVotes[i];
+                    const result=await storeVoteOnline(vote);
+                    if(!result.confirmed) {
+                        remaining.push(vote);
+                        if(result.reason==='migration'){remaining.push(...pendingVotes.slice(i+1));console.error('A migração SQL da Beta 6.0 ainda é necessária:',result.message);break;}
+                    }
+                }
+                pendingVotes=remaining;
+                const saved=savePendingVotes();
+                updatePendingCount();
+                try { await renderDashboard(); }
+                catch(error) { console.error('Falha ao atualizar o painel após sincronização:',error); }
+                setConnectionStatus(!saved?'error':pendingVotes.length?(navigator.onLine?'error':'offline'):'online');
+            } catch(error) {
+                console.error('Falha ao sincronizar votos pendentes:',error);
+                setConnectionStatus('error');
+            } finally {
+                isSyncingPendingVotes=false;
+            }
+        }
+        async function finishVote() {
+            clearInterval(progressAnimationTimer); progressAnimationTimer=null;
+            const candidate=candidates[currentDigits];
+            const vote={vote_id:createVoteId(),candidate_number:isBranco?'BRANCO':(candidate?currentDigits:'NULO'),candidate_name:isBranco?'Voto em branco':(candidate?candidate.name:'Voto nulo'),vote_type:isBranco?'branco':(candidate?'candidato':'nulo'),version:BETA_VERSION};
+            let message='';
+            const queuePendingVote = (reason) => {
+                pendingVotes = pendingVotes.filter(item => item.vote_id !== vote.vote_id);
+                pendingVotes.push(vote);
+                const saved = savePendingVotes();
+                if (!saved) {
+                    pendingVotes = pendingVotes.filter(item => item.vote_id !== vote.vote_id);
+                    message = 'ERRO — NÃO FOI POSSÍVEL GUARDAR O VOTO NESTE NAVEGADOR';
+                    setConnectionStatus('error');
+                    return false;
+                }
+                if (reason === 'offline') {
+                    message = 'REGISTRO PENDENTE — AINDA NÃO CONFIRMADO ONLINE';
+                    setConnectionStatus('offline');
+                } else if (reason === 'migration') {
+                    message = 'PENDENTE — BANCO PRECISA DA MIGRAÇÃO BETA 6.0';
+                    setConnectionStatus('error');
+                } else {
+                    message = 'REGISTRO PENDENTE — AINDA NÃO CONFIRMADO PELO SERVIDOR';
+                    setConnectionStatus('error');
+                }
+                return true;
+            };
+            if(!navigator.onLine) {
+                queuePendingVote('offline');
+            } else {
+                const result=await storeVoteOnline(vote);
+                if(result.confirmed) {
+                    message='VOTO DE DEMONSTRAÇÃO CONFIRMADO ONLINE'; setConnectionStatus('online');
+                } else if(result.reason==='migration') {
+                    queuePendingVote('migration');
+                    console.error('Aplique a migração SQL da Beta 6.0 antes de sincronizar:',result.message);
+                } else {
+                    queuePendingVote('network');
+                    console.error('Voto ainda não confirmado pelo servidor:',result.message || result.reason);
+                }
+            }
+            clearInterval(processingMessageTimer); isProcessing=false; isFim=true;
+            document.getElementById('screen').innerHTML=`<div class="fim-screen">FIM<small>${escapeHtml(message)}</small><small>Obrigado por participar</small></div>`;
+            if(message.includes('CONFIRMADO ONLINE'))playUrnaFimSound();
+            updatePendingCount();
+            try { await renderDashboard(); }
+            catch(error) { console.error('Voto tratado; falha não fatal ao atualizar o painel:',error); }
+            setTimeout(()=>{isFim=false;isReview=false;isBranco=false;currentDigits='';voteAlreadyRecorded=false;renderScreen();},3500);
+        }
+        async function pressConfirma() {
+            if(!appStarted||isFim||isProcessing)return;
+            if(!isReview) {
+                if(currentDigits.length!==2&&!isBranco)return;
+                isReview=true; renderScreen(); return;
+            }
+            isProcessing=true; isReview=false; playUrnaVoteSound();
+            const durations=[850,1500,2600,4100,5600];
+            processingDuration=Math.round(durations[Math.floor(Math.random()*durations.length)]*(0.9+Math.random()*0.2));
+            renderScreen(); startProgressBar(); startProcessingMessages();
+            processingTimer=setTimeout(()=>finishVote().catch(error=>{
+                console.error('Erro inesperado ao finalizar o voto:',error);
+                clearInterval(processingMessageTimer); clearInterval(progressAnimationTimer); progressAnimationTimer=null; isProcessing=false; isFim=true; setConnectionStatus('error');
+                document.getElementById('screen').innerHTML='<div class="fim-screen">!<small>Erro inesperado. O registro não foi confirmado.</small></div>';
+            }),processingDuration+150);
         }
 
         // Beta 5.0: os votos demonstrativos são registrados no banco online compartilhado.
 
         document.addEventListener('keydown', (e) => {
-            if (e.key >= '0' && e.key <= '9') pressNumber(e.key);
-            else if (e.key === 'Enter') {
-                if (appStarted && !isProcessing && !isFim) e.preventDefault();
-                pressConfirma();
+            const target = e.target;
+            const isEditable = target instanceof HTMLElement &&
+                (target.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(target.tagName));
+            const modal = document.getElementById('aboutModal');
+            if (isEditable || (modal && !modal.hidden)) return;
+            if (e.key >= '0' && e.key <= '9') {
+                if (appStarted && !isProcessing && !isFim && !isReview && !isBranco && currentDigits.length < 2) {
+                    e.preventDefault();
+                    pressNumber(e.key);
+                }
+            } else if (e.key === 'Enter') {
+                if (appStarted && !isProcessing && !isFim) {
+                    e.preventDefault();
+                    pressConfirma();
+                }
             } else if (e.key === 'Backspace') {
-                if (appStarted && !isProcessing && !isFim) e.preventDefault();
-                pressCorrige();
-            } else if (e.key.toLowerCase() === 'b') pressBranco();
+                if (appStarted && !isProcessing && !isFim) {
+                    e.preventDefault();
+                    pressCorrige();
+                }
+            } else if (e.key.toLowerCase() === 'b' && appStarted && !isProcessing && !isFim && !isReview) {
+                e.preventDefault();
+                pressBranco();
+            }
         });
 
-        supabaseClient.channel('urna-votes-live')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'urna_votes' }, () => renderDashboard())
-            .subscribe();
+        if (supabaseClient) {
+            supabaseClient.channel('urna-votes-live-beta6')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'urna_votes' }, () => renderDashboard())
+                .subscribe((status) => { if(status==='SUBSCRIBED')setConnectionStatus(navigator.onLine?'online':'offline'); });
+        }
 
+        window.addEventListener('online',()=>{setConnectionStatus('syncing');syncPendingVotes();});
+        window.addEventListener('offline',()=>setConnectionStatus('offline'));
         applyUrnaModel('2026');
+        setConnectionStatus(navigator.onLine?'online':'offline');
         renderScreen();
         renderDashboard();
-        window.addEventListener('storage', (event) => { if (event.key === 'urnaVotesShared') renderDashboard(); });
+        syncPendingVotes();
+        window.addEventListener('storage',(event)=>{
+            if(event.key===PENDING_STORAGE_KEY){pendingVotes=readPendingVotes();updatePendingCount();renderDashboard();}
+        });
     </script>
 </body>
 </html>
