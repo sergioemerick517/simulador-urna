@@ -630,48 +630,83 @@
             if(['PGRST204','42703','PGRST200'].includes(error.code)||/vote_id|schema cache|column/i.test(error.message||''))return {confirmed:false,reason:'migration',message:error.message};
             return {confirmed:false,reason:'network',message:error.message};
         }
+        let isSyncingPendingVotes = false;
         async function syncPendingVotes() {
+            if(isSyncingPendingVotes)return;
             if(!navigator.onLine){setConnectionStatus('offline');updatePendingCount();return;}
             if(!pendingVotes.length){setConnectionStatus('online');updatePendingCount();return;}
+            isSyncingPendingVotes=true;
             setConnectionStatus('syncing');
-            const remaining=[];
-            for(let i=0;i<pendingVotes.length;i++) {
-                const vote=pendingVotes[i];
-                const result=await storeVoteOnline(vote);
-                if(!result.confirmed) {
-                    remaining.push(vote);
-                    if(result.reason==='migration'){remaining.push(...pendingVotes.slice(i+1));console.error('A migração SQL da Beta 6.0 ainda é necessária:',result.message);break;}
+            try {
+                const remaining=[];
+                for(let i=0;i<pendingVotes.length;i++) {
+                    const vote=pendingVotes[i];
+                    const result=await storeVoteOnline(vote);
+                    if(!result.confirmed) {
+                        remaining.push(vote);
+                        if(result.reason==='migration'){remaining.push(...pendingVotes.slice(i+1));console.error('A migração SQL da Beta 6.0 ainda é necessária:',result.message);break;}
+                    }
                 }
+                pendingVotes=remaining;
+                const saved=savePendingVotes();
+                updatePendingCount();
+                try { await renderDashboard(); }
+                catch(error) { console.error('Falha ao atualizar o painel após sincronização:',error); }
+                setConnectionStatus(!saved?'error':pendingVotes.length?(navigator.onLine?'error':'offline'):'online');
+            } catch(error) {
+                console.error('Falha ao sincronizar votos pendentes:',error);
+                setConnectionStatus('error');
+            } finally {
+                isSyncingPendingVotes=false;
             }
-            pendingVotes=remaining; savePendingVotes(); updatePendingCount();
-            await renderDashboard();
-            setConnectionStatus(pendingVotes.length?(navigator.onLine?'error':'offline'):'online');
         }
         async function finishVote() {
             clearInterval(progressAnimationTimer); progressAnimationTimer=null;
             const candidate=candidates[currentDigits];
             const vote={vote_id:createVoteId(),candidate_number:isBranco?'BRANCO':(candidate?currentDigits:'NULO'),candidate_name:isBranco?'Voto em branco':(candidate?candidate.name:'Voto nulo'),vote_type:isBranco?'branco':(candidate?'candidato':'nulo'),version:BETA_VERSION};
             let message='';
+            const queuePendingVote = (reason) => {
+                pendingVotes = pendingVotes.filter(item => item.vote_id !== vote.vote_id);
+                pendingVotes.push(vote);
+                const saved = savePendingVotes();
+                if (!saved) {
+                    pendingVotes = pendingVotes.filter(item => item.vote_id !== vote.vote_id);
+                    message = 'ERRO — NÃO FOI POSSÍVEL GUARDAR O VOTO NESTE NAVEGADOR';
+                    setConnectionStatus('error');
+                    return false;
+                }
+                if (reason === 'offline') {
+                    message = 'REGISTRO PENDENTE — AINDA NÃO CONFIRMADO ONLINE';
+                    setConnectionStatus('offline');
+                } else if (reason === 'migration') {
+                    message = 'PENDENTE — BANCO PRECISA DA MIGRAÇÃO BETA 6.0';
+                    setConnectionStatus('error');
+                } else {
+                    message = 'REGISTRO PENDENTE — AINDA NÃO CONFIRMADO PELO SERVIDOR';
+                    setConnectionStatus('error');
+                }
+                return true;
+            };
             if(!navigator.onLine) {
-                pendingVotes.push(vote); savePendingVotes();
-                message='REGISTRO PENDENTE — AINDA NÃO CONFIRMADO ONLINE'; setConnectionStatus('offline');
+                queuePendingVote('offline');
             } else {
                 const result=await storeVoteOnline(vote);
                 if(result.confirmed) {
                     message='VOTO DE DEMONSTRAÇÃO CONFIRMADO ONLINE'; setConnectionStatus('online');
                 } else if(result.reason==='migration') {
-                    pendingVotes.push(vote); savePendingVotes();
-                    message='PENDENTE — BANCO PRECISA DA MIGRAÇÃO BETA 6.0'; setConnectionStatus('error');
+                    queuePendingVote('migration');
                     console.error('Aplique a migração SQL da Beta 6.0 antes de sincronizar:',result.message);
                 } else {
-                    pendingVotes.push(vote); savePendingVotes();
-                    message='REGISTRO PENDENTE — AINDA NÃO CONFIRMADO PELO SERVIDOR'; setConnectionStatus('offline');
+                    queuePendingVote('network');
+                    console.error('Voto ainda não confirmado pelo servidor:',result.message || result.reason);
                 }
             }
             clearInterval(processingMessageTimer); isProcessing=false; isFim=true;
             document.getElementById('screen').innerHTML=`<div class="fim-screen">FIM<small>${escapeHtml(message)}</small><small>Obrigado por participar</small></div>`;
             if(message.includes('CONFIRMADO ONLINE'))playUrnaFimSound();
-            updatePendingCount(); await renderDashboard();
+            updatePendingCount();
+            try { await renderDashboard(); }
+            catch(error) { console.error('Voto tratado; falha não fatal ao atualizar o painel:',error); }
             setTimeout(()=>{isFim=false;isReview=false;isBranco=false;currentDigits='';voteAlreadyRecorded=false;renderScreen();},3500);
         }
         async function pressConfirma() {
@@ -694,10 +729,30 @@
         // Beta 5.0: os votos demonstrativos são registrados no banco online compartilhado.
 
         document.addEventListener('keydown', (e) => {
-            if (e.key >= '0' && e.key <= '9') pressNumber(e.key);
-            else if (e.key === 'Enter') pressConfirma();
-            else if (e.key === 'Backspace') pressCorrige();
-            else if (e.key.toLowerCase() === 'b') pressBranco();
+            const target = e.target;
+            const isEditable = target instanceof HTMLElement &&
+                (target.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(target.tagName));
+            const modal = document.getElementById('aboutModal');
+            if (isEditable || (modal && !modal.hidden)) return;
+            if (e.key >= '0' && e.key <= '9') {
+                if (appStarted && !isProcessing && !isFim && !isReview && !isBranco && currentDigits.length < 2) {
+                    e.preventDefault();
+                    pressNumber(e.key);
+                }
+            } else if (e.key === 'Enter') {
+                if (appStarted && !isProcessing && !isFim) {
+                    e.preventDefault();
+                    pressConfirma();
+                }
+            } else if (e.key === 'Backspace') {
+                if (appStarted && !isProcessing && !isFim) {
+                    e.preventDefault();
+                    pressCorrige();
+                }
+            } else if (e.key.toLowerCase() === 'b' && appStarted && !isProcessing && !isFim && !isReview) {
+                e.preventDefault();
+                pressBranco();
+            }
         });
 
         if (supabaseClient) {
