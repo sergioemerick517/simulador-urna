@@ -3,6 +3,10 @@ on:
   push:
     branches:
       - beta-6-development
+    paths:
+      - 'index.html'
+      - 'scripts/test-beta6.mjs'
+      - '.github/workflows/beta6-validation.yml'
   workflow_dispatch:
 permissions:
   contents: read
