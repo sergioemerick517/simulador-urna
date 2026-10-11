@@ -1,0 +1,25 @@
+name: Beta 6.0 validation
+on:
+  push:
+    branches:
+      - beta-6-development
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser test dependency
+        run: |
+          npm init -y
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Start local web server
+        run: python3 -m http.server 4173 --directory . > /tmp/urna-http.log 2>&1 &
+      - name: Test Beta 6.0 in Chromium
+        run: node scripts/test-beta6.mjs
