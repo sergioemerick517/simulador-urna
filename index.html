@@ -632,8 +632,13 @@
             catch(exception) { return {confirmed:false,reason:'network',message:String(exception)}; }
             if(!error)return {confirmed:true};
             if(error.code==='23505') {
-                const {data,error:lookupError}=await supabaseClient.from('urna_votes').select('id').eq('vote_id',vote.vote_id).maybeSingle();
-                if(!lookupError&&data)return {confirmed:true,duplicate:true};
+                try {
+                    const {data,error:lookupError}=await supabaseClient.from('urna_votes').select('id').eq('vote_id',vote.vote_id).maybeSingle();
+                    if(!lookupError&&data)return {confirmed:true,duplicate:true};
+                    return {confirmed:false,reason:'network',message:lookupError?.message || 'Não foi possível verificar se o voto já foi salvo.'};
+                } catch(exception) {
+                    return {confirmed:false,reason:'network',message:String(exception)};
+                }
             }
             if(['PGRST204','42703','PGRST200'].includes(error.code)||/vote_id|schema cache|column/i.test(error.message||''))return {confirmed:false,reason:'migration',message:error.message};
             return {confirmed:false,reason:'network',message:error.message};
