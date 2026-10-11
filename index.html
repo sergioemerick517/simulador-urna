@@ -71,8 +71,8 @@
         .processing-title { font-size:18px; font-weight:800; text-align:center; letter-spacing:.5px; }
         .processing-subtitle { font-size:11px; text-align:center; }
         .progress-track { height:12px; border:1px solid #52634d; border-radius:8px; background:#e0e6d8; overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.18); }
-        .progress-fill { height:100%; width:0; border-radius:8px; background:linear-gradient(90deg,#15803d,#22c55e,#4ade80); animation:vote-load var(--load-duration, 2.6s) linear forwards; }
-        @keyframes vote-load { from { width:0; } to { width:100%; } }
+        .progress-fill { height:100%; width:0; border-radius:8px; background:linear-gradient(90deg,#15803d,#22c55e,#4ade80); transition:width 35ms linear; }
+        @media(prefers-reduced-motion:reduce) { .progress-fill { transition:none; } }
         .fim-screen small { font-size: 14px; letter-spacing: 0; font-weight: 600; }
         .start-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; height:100%; }
         .start-screen h2 { font-size:24px; }
@@ -259,7 +259,7 @@
         // Conexão pública do projeto Supabase. A segurança dos dados é aplicada por RLS no banco.
         const SUPABASE_URL = 'https://qfsagbhcrixipxajggdl.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_Y85l8Da_cJD6EiJeFueiJg_Fh-jLGy4';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
         const BETA_VERSION = '6.0';
         // Fotos e candidaturas exibidas para fins demonstrativos. As fotos abaixo são do portal oficial do TSE.
         const candidates = {
@@ -306,10 +306,12 @@
         const PENDING_STORAGE_KEY = 'urnaBeta6PendingVotes';
         let pendingVotes = readPendingVotes();
         let processingTimer = null;
+        let progressAnimationTimer = null;
         let processingDuration = 2600;
         let appStarted = false;
         let voteAlreadyRecorded = false;
-        let localVotes = JSON.parse(localStorage.getItem('urnaVotesShared') || '[]');
+        let localVotes = [];
+        try { const storedLocalVotes = JSON.parse(localStorage.getItem('urnaVotesShared') || '[]'); localVotes = Array.isArray(storedLocalVotes) ? storedLocalVotes : []; } catch (_) { localVotes = []; }
 
         let audioCtx;
         // Trechos de áudio enviados pelo criador do projeto, incorporados no próprio HTML.
@@ -376,7 +378,7 @@
                 return;
             }
             if (isProcessing) {
-                screen.innerHTML = `<div class="processing-screen"><div class="processing-title">PROCESSANDO O VOTO</div><div class="processing-subtitle">Aguarde enquanto tentamos registrar sua escolha.</div><div class="progress-track" role="progressbar" aria-label="Processamento do voto" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill" style="--load-duration:${processingDuration}ms"></div></div><div class="processing-message" id="processingMessage" aria-live="polite">Preparando registro…</div><div class="processing-subtitle">A confirmação depende da resposta do servidor.</div></div>`;
+                screen.innerHTML = `<div class="processing-screen"><div class="processing-title">PROCESSANDO O VOTO</div><div class="processing-subtitle">Aguarde enquanto tentamos registrar sua escolha.</div><div class="progress-track" role="progressbar" aria-label="Processamento do voto" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill" id="voteProgressFill" style="width:0%"></div></div><div class="processing-message" id="processingMessage" aria-live="polite">Preparando registro…</div><div class="processing-subtitle">A confirmação depende da resposta do servidor.</div></div>`;
                 return;
             }
             if (isReview) {
@@ -483,6 +485,7 @@
         }
 
         async function renderDashboard() {
+            if (!supabaseClient) { setConnectionStatus('offline'); updatePendingCount(); const bars=document.getElementById('resultsBars'); if(bars)bars.innerHTML='<p class="empty-chart">Biblioteca online indisponível. Os votos não foram confirmados no servidor.</p>'; return; }
             const { data: votes, error } = await supabaseClient.from('urna_votes').select('candidate_number,candidate_name,vote_type,version,created_at').order('created_at', { ascending: true });
             if (error) { console.error('Não foi possível carregar os votos online:', error.message); setConnectionStatus(navigator.onLine ? 'error' : 'offline'); return; }
             dashboardVotes = votes || [];
@@ -564,6 +567,22 @@
         function updatePendingCount() {
             const el=document.getElementById('pendingTotal'); if(el)el.textContent=pendingVotes.length;
         }
+        function startProgressBar() {
+            clearInterval(progressAnimationTimer);
+            const track=document.querySelector('.progress-track');
+            const fill=document.getElementById('voteProgressFill');
+            if(!track||!fill)return;
+            const startedAt=performance.now();
+            const update=()=>{
+                const elapsed=performance.now()-startedAt;
+                const percent=Math.min(100,Math.round((elapsed/processingDuration)*100));
+                fill.style.width=percent+'%';
+                track.setAttribute('aria-valuenow',String(percent));
+                if(percent>=100){clearInterval(progressAnimationTimer);progressAnimationTimer=null;}
+            };
+            fill.style.width='0%'; track.setAttribute('aria-valuenow','0'); update();
+            progressAnimationTimer=setInterval(update,35);
+        }
         function startProcessingMessages() {
             const messages=['Preparando registro…','Enviando ao servidor…','Aguardando confirmação…','Verificando resposta…'];
             let index=0; clearInterval(processingMessageTimer);
@@ -571,6 +590,7 @@
         }
         async function storeVoteOnline(vote) {
             if(!navigator.onLine)return {confirmed:false,reason:'offline'};
+            if(!supabaseClient)return {confirmed:false,reason:'network',message:'A biblioteca de conexão não foi carregada.'};
             setConnectionStatus('syncing');
             let error;
             try { const response=await supabaseClient.from('urna_votes').insert(vote); error=response.error; }
@@ -601,6 +621,7 @@
             setConnectionStatus(pendingVotes.length?(navigator.onLine?'error':'offline'):'online');
         }
         async function finishVote() {
+            clearInterval(progressAnimationTimer); progressAnimationTimer=null;
             const candidate=candidates[currentDigits];
             const vote={vote_id:createVoteId(),candidate_number:isBranco?'BRANCO':(candidate?currentDigits:'NULO'),candidate_name:isBranco?'Voto em branco':(candidate?candidate.name:'Voto nulo'),vote_type:isBranco?'branco':(candidate?'candidato':'nulo'),version:BETA_VERSION};
             let message='';
@@ -635,10 +656,10 @@
             isProcessing=true; isReview=false; playUrnaVoteSound();
             const durations=[850,1500,2600,4100,5600];
             processingDuration=Math.round(durations[Math.floor(Math.random()*durations.length)]*(0.9+Math.random()*0.2));
-            renderScreen(); startProcessingMessages();
+            renderScreen(); startProgressBar(); startProcessingMessages();
             processingTimer=setTimeout(()=>finishVote().catch(error=>{
                 console.error('Erro inesperado ao finalizar o voto:',error);
-                clearInterval(processingMessageTimer); isProcessing=false; isFim=true; setConnectionStatus('error');
+                clearInterval(processingMessageTimer); clearInterval(progressAnimationTimer); progressAnimationTimer=null; isProcessing=false; isFim=true; setConnectionStatus('error');
                 document.getElementById('screen').innerHTML='<div class="fim-screen">!<small>Erro inesperado. O registro não foi confirmado.</small></div>';
             }),processingDuration+150);
         }
@@ -652,9 +673,11 @@
             else if (e.key.toLowerCase() === 'b') pressBranco();
         });
 
-        supabaseClient.channel('urna-votes-live-beta6')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'urna_votes' }, () => renderDashboard())
-            .subscribe((status) => { if(status==='SUBSCRIBED')setConnectionStatus(navigator.onLine?'online':'offline'); });
+        if (supabaseClient) {
+            supabaseClient.channel('urna-votes-live-beta6')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'urna_votes' }, () => renderDashboard())
+                .subscribe((status) => { if(status==='SUBSCRIBED')setConnectionStatus(navigator.onLine?'online':'offline'); });
+        }
 
         window.addEventListener('online',()=>{setConnectionStatus('syncing');syncPendingVotes();});
         window.addEventListener('offline',()=>setConnectionStatus('offline'));
