@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 
 const htmlPath = fileURLToPath(new URL('../index.html', import.meta.url));
 const html = await readFile(htmlPath, 'utf8');
-const inlineScripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/gi)].map(m => m[1]);
+const inlineScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/gi)].map(m => m[1]);
 assert.ok(inlineScripts.length, 'HTML deve conter o script principal');
 for (const script of inlineScripts) {
   // Parse only; the browser test below checks the interactive flow.
