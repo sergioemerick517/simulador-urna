@@ -641,7 +641,7 @@
                 console.error('Erro inesperado ao finalizar o voto:',error);
                 clearInterval(processingMessageTimer); isProcessing=false; isFim=true; setConnectionStatus('error');
                 document.getElementById('screen').innerHTML='<div class="fim-screen">!<small>Erro inesperado. O registro não foi confirmado.</small></div>';
-            }),duration+150);
+            }),processingDuration+150);
         }
 
         // Beta 5.0: os votos demonstrativos são registrados no banco online compartilhado.
