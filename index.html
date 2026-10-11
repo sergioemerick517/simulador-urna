@@ -405,7 +405,7 @@
                 const candidate = candidates[currentDigits];
                 const label = isBranco ? 'VOTO EM BRANCO' : (candidate ? candidate.name : 'VOTO NULO');
                 const number = isBranco ? 'BRANCO' : currentDigits;
-                screen.innerHTML = `<div class="review-screen"><div class="screen-header">REVISE SUA ESCOLHA</div><h2>CONFIRMAÇÃO DO VOTO</h2><div class="review-summary"><strong>${escapeHtml(label)}</strong><span>${isBranco ? 'Você selecionou voto em branco.' : (candidate ? 'Número ' + escapeHtml(number) + ' · ' + escapeHtml(candidate.party) : 'O número digitado não corresponde a uma candidatura cadastrada.')}</span></div><p style="font-size:12px;text-align:center">Confira antes de registrar. Você ainda pode voltar e corrigir.</p><div class="review-actions"><button type="button" class="review-back" onclick="pressCorrige()">CORRIGIR</button><button type="button" class="review-confirm" onclick="pressConfirma()">CONFIRMAR VOTO</button></div><div class="screen-footer">APERTE <strong>CONFIRMA</strong> PARA CONTINUAR OU <strong>CORRIGE</strong> PARA VOLTAR</div></div>`;
+                screen.innerHTML = `<div class="review-screen"><div class="screen-header">REVISE SUA ESCOLHA</div><h2>CONFIRMAÇÃO DO VOTO</h2><div class="review-summary"><strong>${escapeHtml(label)}</strong><span>${isBranco ? 'Você selecionou voto em branco.' : (candidate ? 'Número ' + escapeHtml(number) + ' · <span style="color:' + partyColor(candidate.party) + ';font-weight:800">' + escapeHtml(candidate.party) + '</span> : 'O número digitado não corresponde a uma candidatura cadastrada.')}</span></div><p style="font-size:12px;text-align:center">Confira antes de registrar. Você ainda pode voltar e corrigir.</p><div class="review-actions"><button type="button" class="review-back" onclick="pressCorrige()">CORRIGIR</button><button type="button" class="review-confirm" onclick="pressConfirma()">CONFIRMAR VOTO</button></div><div class="screen-footer">APERTE <strong>CONFIRMA</strong> PARA CONTINUAR OU <strong>CORRIGE</strong> PARA VOLTAR</div></div>`;
                 return;
             }
             if (isFim) {
@@ -523,7 +523,7 @@
             const tally = {};
             allVotes.forEach(v => { const label = v.vote_type === 'branco' || v.candidate_number === 'BRANCO' ? 'Voto em branco' : v.vote_type === 'nulo' || v.candidate_number === 'NULO' ? 'Voto nulo' : (v.candidate_name || v.candidate_number || 'Não identificado'); tally[label] = (tally[label] || 0) + 1; });
             const entries = Object.entries(tally).sort((a,b) => b[1]-a[1]);
-            document.getElementById('candidateVoteRows').innerHTML = entries.length ? entries.map(([name,count]) => `<tr><td>${escapeHtml(name)}</td><td>${count}</td><td>${total ? (count*100/total).toFixed(1).replace('.',',')+'%' : '0%'}</td></tr>`).join('') : '<tr><td colspan="3">Nenhum voto confirmado ainda.</td></tr>';
+            document.getElementById('candidateVoteRows').innerHTML = entries.length ? entries.map(([name,count]) => `<tr><td><span style="color:${resultColor(name)};font-weight:700">${escapeHtml(name)}</span></td><td>${count}</td><td>${total ? (count*100/total).toFixed(1).replace('.',',')+'%' : '0%'}</td></tr>`).join('') : '<tr><td colspan="3">Nenhum voto confirmado ainda.</td></tr>';
             renderResultCharts(entries, total);
             updatePendingCount();
         }
