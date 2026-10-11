@@ -44,7 +44,7 @@ try {
   assert.equal((await page.locator('.digit').first().textContent()).trim(), '', 'CORRIGIR deve limpar a digitação');
   await page.getByRole('button', { name: 'Voto em branco' }).click();
   await page.getByRole('button', { name: 'Confirma' }).click();
-  await page.getByText('VOTO EM BRANCO').waitFor();
+  await page.getByText('VOTO EM BRANCO', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'CONFIRMAR VOTO' }).click();
   await page.getByText('VOTO DE DEMONSTRAÇÃO CONFIRMADO ONLINE').waitFor({ timeout: 9000 });
   await page.waitForTimeout(3700);
