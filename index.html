@@ -278,6 +278,26 @@
             '70': { name: 'AUGUSTO CURY', party: 'AVANTE', vice: 'Júlio Delgado', photo: 'https://www.tse.jus.br/imagens/imagens/escritor-augusto-cury/%40%40images/image-200-a49a0ad458e00ae031cca0a564cfe26f.png' }
         };
 
+        // Cores dos partidos conforme as referências visuais enviadas pelo usuário.
+        const partyColors = {
+            'AVANTE': '#19c6e6',
+            'MISSÃO': '#e5c400',
+            'PSD': '#65b52e',
+            'NOVO': '#ff6b1a',
+            'UP': '#a3a3a3',
+            'PSTU': '#f05b67',
+            'DC': '#8b5cf6',
+            'PCB': '#e5484d',
+            'DEMOCRATA': '#36b37e',
+            'PCO': '#f05252',
+            'PL': '#2474d8',
+            'PT': '#ef3340',
+            'PRTB': '#64748b'
+        };
+        function partyColor(party) {
+            return partyColors[String(party || '').toUpperCase()] || '#94a3b8';
+        }
+
         const urnaModels = {
             '2026': { label:'URNALAB 2026 · CONCEITO FICTÍCIO', plaque:'URNALAB · CONCEITO 2026 · FICTÍCIO', brand:'URNALAB · PROJETO CONCEITUAL', description:'UrnaLab 2026 · conceito visual fictício criado exclusivamente para este site. Não é um modelo real, não é oficial e não representa equipamento do TSE.' },
             '2022': { label:'UE 2022', plaque:'JUSTIÇA ELEITORAL · UE 2022', brand:'TSE · JUSTIÇA ELEITORAL · UE 2022', description:'UE 2022 · representação visual simplificada de um modelo real utilizado pela Justiça Eleitoral. O desenho nesta página não é uma réplica técnica.' },
@@ -437,7 +457,7 @@
                             ${candidate ? `
                                 <div style="margin-top: 15px; font-size: 13px;">
                                     Nome: <strong>${candidate.name}</strong><br>
-                                    Partido: <strong>${candidate.party}</strong><br>
+                                    Partido: <strong style="color:${partyColor(candidate.party)}">${candidate.party}</strong><br>
                                     Vice: <strong>${candidate.vice}</strong>
                                 </div>
                             ` : (currentDigits.length === 2 ? `<div style="margin-top: 15px; font-weight: bold;">VOTO NULO</div>` : '')}
