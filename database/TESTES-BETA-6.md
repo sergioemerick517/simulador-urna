@@ -16,9 +16,9 @@
 - [x] Teste automatizado em Chromium: iniciar, digitar 13, abrir a revisão e confirmar.
 - [x] Teste automatizado em Chromium: a barra de processamento avança durante a espera.
 - [x] Teste automatizado em Chromium: a interface só exibe confirmação após a resposta simulada de sucesso do servidor.
-- [ ] Testar manualmente **CORRIGIR**, voto em branco e número nulo.
+- [x] Teste automatizado: **CORRIGIR** limpa a digitação e permite escolher novamente.
+- [x] Teste automatizado: voto em branco e número inexistente seguem os caminhos corretos.
 - [ ] Verificar visualmente as mensagens alternadas durante o envio real.
-- [ ] Voto em branco e número inválido seguem os caminhos de branco e nulo.
 
 ## Conexão e duplicação
 
@@ -43,7 +43,7 @@
 - [x] IDs principais da interface presentes e sem IDs HTML duplicados.
 - [x] Barra única usa a duração selecionada para o processamento.
 - [x] Foto do Lula corrigida para usar a mesma codificação de URL das outras fotos do TSE.
-- [x] Teste automatizado em navegador Chromium passou em 2026-10-11 (backend simulado, sem inserir votos reais).
+- [x] Testes automatizados em Chromium passaram em 2026-10-11: sintaxe, digitação, revisão, avanço da barra, correção, branco, nulo e confirmação simulada (sem inserir votos reais).
 - [ ] Teste manual com Supabase real, modo offline/online e fotos ainda pendente.
 
 ## Limites conhecidos a validar
