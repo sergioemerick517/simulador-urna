@@ -507,24 +507,27 @@
                     try {
                         const { error } = await supabaseClient.from('urna_votes').insert(vote);
                         if (error) throw error;
-                        isProcessing = false;
-                        isFim = true;
-                        playUrnaFimSound();
-                        renderScreen();
-                        await renderDashboard();
-                        setTimeout(() => {
-                            isFim = false;
-                            isBranco = false;
-                            currentDigits = '';
-                            renderScreen();
-                        }, 3000);
                     } catch (error) {
                         console.error('Falha ao registrar voto online:', error?.message || error);
                         isProcessing = false;
                         isFim = false;
                         renderScreen();
                         alert('O voto não foi registrado. Verifique a conexão e as permissões do Supabase e tente novamente.');
+                        return;
                     }
+
+                    // A gravação foi confirmada. Falhas ao atualizar o painel não invalidam o voto já salvo.
+                    isProcessing = false;
+                    isFim = true;
+                    playUrnaFimSound();
+                    renderScreen();
+                    renderDashboard().catch(error => console.error('Falha ao atualizar o painel de votos:', error));
+                    setTimeout(() => {
+                        isFim = false;
+                        isBranco = false;
+                        currentDigits = '';
+                        renderScreen();
+                    }, 3000);
                 }, duration + 150);
             }
         }
