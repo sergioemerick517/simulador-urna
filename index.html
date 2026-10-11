@@ -456,7 +456,7 @@
                             </div>
                             ${candidate ? `
                                 <div style="margin-top: 15px; font-size: 13px;">
-                                    Nome: <strong>${candidate.name}</strong><br>
+                                    Nome: <strong style="color:${partyColor(candidate.party)}">${candidate.name}</strong><br>
                                     Partido: <strong style="color:${partyColor(candidate.party)}">${candidate.party}</strong><br>
                                     Vice: <strong>${candidate.vice}</strong>
                                 </div>
@@ -527,16 +527,23 @@
             renderResultCharts(entries, total);
             updatePendingCount();
         }
+        function resultColor(name) {
+            const label = String(name || '').trim().toLocaleUpperCase('pt-BR');
+            if (label.includes('BRANCO')) return '#f8fafc';
+            if (label.includes('NULO')) return '#64748b';
+            const candidate = Object.values(candidates).find(item => label === item.name.toLocaleUpperCase('pt-BR') || label === item.party.toLocaleUpperCase('pt-BR') || label.includes(item.name.toLocaleUpperCase('pt-BR')));
+            return candidate ? partyColor(candidate.party) : '#94a3b8';
+        }
+
         function renderResultCharts(entries,total) {
-            const palette=['#38bdf8','#34d399','#fbbf24','#c084fc','#fb7185','#a3e635','#f97316','#818cf8','#2dd4bf','#e879f9','#facc15','#94a3b8'];
             const bars=document.getElementById('resultsBars'), pie=document.getElementById('resultsPie'), legend=document.getElementById('resultsLegend');
             if(!bars||!pie||!legend)return;
             if(!entries.length||!total){bars.innerHTML='<p class="empty-chart">Ainda não há votos confirmados.</p>';pie.style.background='#334155';legend.innerHTML='<span class="empty-chart">Sem dados para exibir.</span>';return;}
-            bars.innerHTML=entries.map(([name,count],i)=>{const pct=count*100/total;return `<div class="bar-row"><span class="bar-label" title="${escapeHtml(name)}">${escapeHtml(name)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${palette[i%palette.length]}"></div></div><span class="bar-value">${count} · ${pct.toFixed(1).replace('.',',')}%</span></div>`;}).join('');
+            bars.innerHTML=entries.map(([name,count])=>{const pct=count*100/total,color=resultColor(name);return '<div class="bar-row"><span class="bar-label" title="'+escapeHtml(name)+'">'+escapeHtml(name)+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div><span class="bar-value">'+count+' · '+pct.toFixed(1).replace('.',',')+'%</span></div>';}).join('');
             let offset=0;
-            const segments=entries.map(([name,count],i)=>{const start=offset;offset+=count*100/total;return {name,count,pct:count*100/total,color:palette[i%palette.length],start,end:offset};});
-            pie.style.background='conic-gradient('+segments.map(s=>`${s.color} ${s.start}% ${s.end}%`).join(',')+')';
-            legend.innerHTML=segments.map(s=>`<div class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span><span>${escapeHtml(s.name)} — ${s.pct.toFixed(1).replace('.',',')}%</span></div>`).join('');
+            const segments=entries.map(([name,count])=>{const start=offset;offset+=count*100/total;return {name,count,pct:count*100/total,color:resultColor(name),start,end:offset};});
+            pie.style.background='conic-gradient('+segments.map(s=>s.color+' '+s.start+'% '+s.end+'%').join(',')+')';
+            legend.innerHTML=segments.map(s=>'<div class="legend-item"><span class="legend-swatch" style="background:'+s.color+'"></span><span>'+escapeHtml(s.name)+' — '+s.pct.toFixed(1).replace('.',',')+'%</span></div>').join('');
         }
 
                 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
