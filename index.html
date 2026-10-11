@@ -506,7 +506,15 @@
 
         async function renderDashboard() {
             if (!supabaseClient) { setConnectionStatus('offline'); updatePendingCount(); const bars=document.getElementById('resultsBars'); if(bars)bars.innerHTML='<p class="empty-chart">Biblioteca online indisponível. Os votos não foram confirmados no servidor.</p>'; return; }
-            const { data: votes, error } = await supabaseClient.from('urna_votes').select('candidate_number,candidate_name,vote_type,version,created_at').order('created_at', { ascending: true });
+            let response;
+            try {
+                response = await supabaseClient.from('urna_votes').select('candidate_number,candidate_name,vote_type,version,created_at').order('created_at', { ascending: true });
+            } catch (exception) {
+                console.error('Falha de rede ao carregar os votos online:', exception);
+                setConnectionStatus(navigator.onLine ? 'error' : 'offline');
+                return;
+            }
+            const { data: votes, error } = response;
             if (error) { console.error('Não foi possível carregar os votos online:', error.message); setConnectionStatus(navigator.onLine ? 'error' : 'offline'); return; }
             dashboardVotes = votes || [];
             const allVotes = dashboardVotes, total = allVotes.length;
