@@ -13,11 +13,11 @@
 
 ## Fluxo de votação
 
-- [ ] Digitar um número de candidatura e confirmar abre a tela de revisão, sem registrar ainda.
-- [ ] Escolher **CORRIGIR** volta à tela de digitação.
-- [ ] Escolher **CONFIRMAR VOTO** inicia uma única barra de processamento.
-- [ ] As mensagens de processamento mudam enquanto o registro está sendo enviado.
-- [ ] Um registro só é apresentado como confirmado após confirmação do servidor.
+- [x] Teste automatizado em Chromium: iniciar, digitar 13, abrir a revisão e confirmar.
+- [x] Teste automatizado em Chromium: a barra de processamento avança durante a espera.
+- [x] Teste automatizado em Chromium: a interface só exibe confirmação após a resposta simulada de sucesso do servidor.
+- [ ] Testar manualmente **CORRIGIR**, voto em branco e número nulo.
+- [ ] Verificar visualmente as mensagens alternadas durante o envio real.
 - [ ] Voto em branco e número inválido seguem os caminhos de branco e nulo.
 
 ## Conexão e duplicação
@@ -43,7 +43,8 @@
 - [x] IDs principais da interface presentes e sem IDs HTML duplicados.
 - [x] Barra única usa a duração selecionada para o processamento.
 - [x] Foto do Lula corrigida para usar a mesma codificação de URL das outras fotos do TSE.
-- [ ] Teste completo de interface em navegador ainda pendente.
+- [x] Teste automatizado em navegador Chromium passou em 2026-10-11 (backend simulado, sem inserir votos reais).
+- [ ] Teste manual com Supabase real, modo offline/online e fotos ainda pendente.
 
 ## Limites conhecidos a validar
 
