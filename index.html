@@ -504,17 +504,27 @@
                         vote_type: isBranco ? 'branco' : (candidate ? 'candidato' : 'nulo'),
                         version: BETA_VERSION
                     };
-                    const { error } = await supabaseClient.from('urna_votes').insert(vote);
-                    if (error) {
-                        console.error('Falha ao registrar voto online:', error.message);
-                        alert('Não foi possível registrar o voto online. Verifique sua conexão e tente novamente.');
+                    try {
+                        const { error } = await supabaseClient.from('urna_votes').insert(vote);
+                        if (error) throw error;
+                        isProcessing = false;
+                        isFim = true;
+                        playUrnaFimSound();
+                        renderScreen();
+                        await renderDashboard();
+                        setTimeout(() => {
+                            isFim = false;
+                            isBranco = false;
+                            currentDigits = '';
+                            renderScreen();
+                        }, 3000);
+                    } catch (error) {
+                        console.error('Falha ao registrar voto online:', error?.message || error);
+                        isProcessing = false;
+                        isFim = false;
+                        renderScreen();
+                        alert('O voto não foi registrado. Verifique a conexão e as permissões do Supabase e tente novamente.');
                     }
-                    await renderDashboard();
-                    isProcessing = false;
-                    isFim = true;
-                    playUrnaFimSound();
-                    renderScreen();
-                    setTimeout(() => { isFim = false; isBranco = false; currentDigits = ''; voteAlreadyRecorded = false; renderScreen(); }, 3000);
                 }, duration + 150);
             }
         }
@@ -523,9 +533,13 @@
 
         document.addEventListener('keydown', (e) => {
             if (e.key >= '0' && e.key <= '9') pressNumber(e.key);
-            else if (e.key === 'Enter') pressConfirma();
-            else if (e.key === 'Backspace') pressCorrige();
-            else if (e.key.toLowerCase() === 'b') pressBranco();
+            else if (e.key === 'Enter') {
+                if (appStarted && !isProcessing && !isFim) e.preventDefault();
+                pressConfirma();
+            } else if (e.key === 'Backspace') {
+                if (appStarted && !isProcessing && !isFim) e.preventDefault();
+                pressCorrige();
+            } else if (e.key.toLowerCase() === 'b') pressBranco();
         });
 
         supabaseClient.channel('urna-votes-live')
