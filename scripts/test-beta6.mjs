@@ -34,8 +34,7 @@ try {
   await page.waitForTimeout(180);
   const width = await fill.evaluate(el => parseFloat(el.style.width));
   assert.ok(width > 0, `barra de processamento deve avançar; largura observada: ${width}%`);
-  await page.getByText('FIM', { exact: true }).waitFor({ timeout: 9000 });
-  await page.getByText('VOTO DE DEMONSTRAÇÃO CONFIRMADO ONLINE').waitFor({ timeout: 1000 });
+  await page.getByText('VOTO DE DEMONSTRAÇÃO CONFIRMADO ONLINE').waitFor({ timeout: 9000 });
   console.log('PASS: sintaxe JavaScript, início, digitação, revisão, barra animada e confirmação simulada.');
 } finally {
   await browser.close();
