@@ -377,7 +377,7 @@
                 return;
             }
             if (isProcessing) {
-                screen.innerHTML = '<div class="processing-screen"><div class="processing-title">PROCESSANDO O VOTO</div><div class="processing-subtitle">Aguarde enquanto tentamos registrar sua escolha.</div><div class="progress-track" role="progressbar" aria-label="Processamento do voto" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill" style="--load-duration:${processingDuration}ms"></div></div><div class="processing-message" id="processingMessage" aria-live="polite">Preparando registro…</div><div class="processing-subtitle">A confirmação depende da resposta do servidor.</div></div>';
+                screen.innerHTML = `<div class="processing-screen"><div class="processing-title">PROCESSANDO O VOTO</div><div class="processing-subtitle">Aguarde enquanto tentamos registrar sua escolha.</div><div class="progress-track" role="progressbar" aria-label="Processamento do voto" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill" style="--load-duration:${processingDuration}ms"></div></div><div class="processing-message" id="processingMessage" aria-live="polite">Preparando registro…</div><div class="processing-subtitle">A confirmação depende da resposta do servidor.</div></div>`;
                 return;
             }
             if (isReview) {
